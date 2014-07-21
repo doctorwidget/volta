@@ -31,7 +31,7 @@ This is done via *lein*:
 
 .. code-block:: bash
 
-    ~/code/path/to/project : lein new app volta
+    ~path/to/project $: lein new app volta
     
     Generating a project called volta based on the 'app' template.
 
@@ -40,9 +40,9 @@ This will give you the usual layout for a Clojure project:
 
 .. code-block:: bash
 
-    ~/code/path/to/project : cd volta
+    ~/path/to/project $: cd volta
     
-    ~/code/.../volta : ls
+    volta $: ls
 
     LICENSE     doc/          resources   test
     README.md   project.clj   src
@@ -76,9 +76,9 @@ Sphinx.
 
 .. code-block:: bash
 
-      ~/.../volta : workon spameggs   # note: virtualenv fu going on
+      volta $: workon spameggs   # note: virtualenv fu going on
 
-     (spameggs) ~/.../volta: pip list
+     (spameggs) volta $: pip list
      
      docutils (0.12)
      Jinja2 (2.7.2)
@@ -93,14 +93,14 @@ Assuming that you already have *pip*, adding Sphinx is trivially easy:
 
 .. code-block:: bash
 
-      (spameggs) ~/blah : pip install Sphinx
+      (spameggs) volta $: pip install Sphinx
 
       #... download output elided
       Successfully installed Sphinx Pygments docutils Jinja2 markupsafe
       Cleaning up...
 
       # oddly, there is no plain old 'Sphinx' command.
-      (spameggs) ~/blah : sphinx-build --version
+      (spameggs) volta $: sphinx-build --version
       Sphinx (sphinx-build) 1.2.2
 
 
@@ -109,9 +109,9 @@ Now you'll want to change to your ``doc/`` directory (at the top level of the
 
 .. code-block:: bash
 
-      (spameggs) ~/.../volta : cd docs
+      (spameggs) volta $: cd docs
 
-      (spameggs) ~/.../volta/doc/ : sphinx-quickstart
+      (spameggs) volta/doc $: sphinx-quickstart
 
       # ... Sphinx questionnaire follows
       # ... just use all the defaults
@@ -169,7 +169,7 @@ the docs via a lein command:
 
 .. code-block:: bash
 
-    (spameggs) ~/.../volta $: lein sphinx
+    (spameggs) volta $: lein sphinx
     #... output elided
     build succeeded
 
@@ -181,7 +181,7 @@ Confirm that you have access to a Clojure REPL via ``lein repl``.
 
 .. code-block:: bash
 
-    (spameggs) ~/.../volta $: lein repl
+    (spameggs) volta $: lein repl
 
     nREPL server started on port 51685 on host 127.0.0.1 - nrepl://127.0.0.1:51685
     REPL-y 0.3.1
@@ -204,12 +204,116 @@ Confirm that you have access to a Clojure REPL via ``lein repl``.
 
 .. code-block:: bash
 
-   (spameggs) ~/.../volta $: lein test
+   (spameggs) volta $: lein test
 
    #... output elided
    Ran 1 tests containing 1 assertions.
    1 failures, 0 errors.
    Tests failed
 
-
 Fixing and re-running the test is left as an exercise for the reader. 
+
+
+Mongodb
+============
+
+SQL databases are great, but sometimes you'd rather not be bothered with
+managing and migrating schemas every time your application model changes.
+`MongoDB`_ is a great example of a document-oriented NoSQL database. It's
+designed from the ground up with web applications in mind, with sharding and
+scaling built right into the core, and it has a great Clojure API in the form of
+`Monger`_. You can easily add free (but limited to dev-sized unless you pay)
+Mongo databases to your `Heroku`_ apps as well. As long as we're trying to come
+up with a Clojure-centric web stack, Clojure and MongoDB are an obvious match.
+
+.. _`MongoDB`: http://www.mongodb.org/
+
+.. _`Monger`: http://clojuremongodb.info/
+
+.. _`Heroku`: https://devcenter.heroku.com/
+
+
+If you're doing something where SQL is your best choice for a database solution,
+then you should probably just stick with Django and Postgres. Really! 
+
+
+Installing MongoDB
+--------------------
+
+Obviously you'll want a local database running as a server locally. The best
+way to do that is to use the Ruby-based ``homebrew`` tool mentioned up above.
+You'll want to start with a couple of incantations to make sure everything is up
+to date:
+
+.. code-block:: bash
+
+    volta $: brew doctor
+    Your system is ready to brew.
+
+    volta $: brew update
+    Already up-to-date.
+
+    volta $: brew install mongodb
+    #... output elided
+
+
+Then you'll need to create the directory where MongoDB will store its data. By
+default that's a directory directly off of the root: ``/data/db``. You will need
+to create this manually, and you'll probably need to add permissions manually.
+Whichever user account launches the ``mongod`` process is the user process that
+will need read/write access to that directory. 
+
+.. code-block:: bash
+
+   volta $: sudo mkdir -p /data/db
+
+   volta $: sudo chown scottfitz /data/db
+
+Now my account owns that directory, so when I start the ``mongod`` process, it
+will inherit my read-write access. Starting the mongodb server is done via the
+``mongod`` command at the command line:
+
+.. code-block:: bash
+
+   volta $: mongod
+   #... output elided
+   2014-07-20T19:10:35.849-0700 [initandlisten] waiting for connections on port 27017
+                
+
+As usual, you can use ``CTRL-C`` to stop the server when you're done. Now you
+can switch to a different shell or terminal and run the client, which is invoked
+with plain old ``mongo``.
+
+.. code-block:: bash
+
+   # in another terminal
+   
+   volta $: mongo
+   MongoDB shell version: 2.6.3
+   connecting to: test
+   Welcome to the MongoDB shell.
+   For interactive help, type "help".
+   For more comprehensive documentation, see http://docs.mongodb.org/
+
+   > db             # tells us which db we are in right now
+   test
+   
+   > show dbs       # show all available dbs
+   admin  (empty)
+   local  0.078GB
+   
+   > use foodb
+   switched to db foodb
+
+   > db
+   foodb
+
+   >quit()
+   
+   volta $:  
+
+And that's it. From there you can mess around with Mongo at will, go through
+online tutorials, and what-have-you. As long as your ``mongod`` process is up
+and running in a background process somewhere, your Clojure/Ring code will be
+able to access it. 
+

@@ -38,20 +38,19 @@ until then, this project will serve as my own customized set of batteries.
 TODO:
 ========
 
-*DONE* -- create project in Lein
-*DONE* -- create initial documentation
+#. ring-based hello world page 
+     compojure
+     enlive
+     bootstrap.css
+    
+#. second viewable page for demo of trivial monger fu
 
-*DONE* -- (pip) add Sphinx documentation
-*DONE* -- add lein-sphinx plugin
-*DONE* -- build first round of docs
-*DONE* -- eyeball everything to make sure it looks good
+#. monger
+     installation
+     configuration
+     simple demo of complete round-trip functionality
 
-*DONE* -- get into a Clojure REPL and make sure everything looks good there
-*DONE* -- fix the broken unit test supplied by Lein
 
--- create the git repository
-
--- (homebrew) brew doctor / brew update / brew install mongodb
 
 
 
