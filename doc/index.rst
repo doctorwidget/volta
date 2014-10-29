@@ -10,12 +10,13 @@ Contents:
 
 .. toctree::
    :maxdepth: 2
-   :glob:
 
    intro
    quickstart
-
-
+   mongo
+   monger
+   Intro To Ring <ring_intro>
+   Ring Down And Dirty <ring_details>
 
 
 Indices and tables
