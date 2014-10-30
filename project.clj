@@ -7,6 +7,7 @@
                  [org.clojure/clojurescript "0.0-2268"]
                  [com.novemberain/monger "2.0.0"]
                  [ring "1.3.1"]
+                 [ring/ring-defaults "0.1.2"]
                  [enlive "1.1.5"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]

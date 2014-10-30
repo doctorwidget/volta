@@ -18,6 +18,10 @@
               (str "<li>" k " >> " v "</li>")))
         "</UL></BODY></HTML>")))
 
+(defn handler-gamma
+  [request]
+  (rr/response (str request)))
+
 (defn red-page
   [request]
   (rr/response

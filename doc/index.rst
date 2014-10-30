@@ -19,6 +19,7 @@ Contents:
    Ring Down And Dirty <ring_details>
    compojure
    enlive
+   middleware
 
 
 
