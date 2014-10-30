@@ -6,7 +6,8 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2268"]
                  [com.novemberain/monger "2.0.0"]
-                 [ring "1.3.1"]]
+                 [ring "1.3.1"]
+                 [enlive "1.1.5"]]
 
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-ring "0.8.11"]

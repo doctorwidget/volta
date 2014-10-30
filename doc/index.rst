@@ -18,6 +18,8 @@ Contents:
    Intro To Ring <ring_intro>
    Ring Down And Dirty <ring_details>
    compojure
+   enlive
+
 
 
 Indices and tables
