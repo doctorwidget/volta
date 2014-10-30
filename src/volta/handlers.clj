@@ -14,6 +14,23 @@
   (rr/response
    (str "<HTML><BODY><UL>"
           (apply str (for [[k v] request]
-              (str "<li>" k ": " v "</li>")))
+              (str "<li>" k " >> " v "</li>")))
         "</UL></BODY></HTML>")))
 
+(defn volta-home
+  "A minimalist home page"
+  [request]
+  (rr/response
+   (str  "<HTML><BODY><H1>Project Volta</H1>"
+         (str request)
+         "</BODY></HTML>")))
+
+(defn red-page
+  [request]
+  (rr/response
+   (str "<HTML><BODY style='background-color:red'>Red</BODY></HTML>")))
+
+(defn blue-page
+  [request]
+  (rr/response
+   (str "<HTML><BODY style='background-color:blue'>Blue</BODY></HTML>")))

@@ -16,6 +16,8 @@
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}}
 
+  :ring {:handler volta.routes/main}
+ 
   :sphinx {
            :builder :html
            :source "doc"

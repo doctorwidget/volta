@@ -1,3 +1,5 @@
+.. _ring_intro:
+
 *************************
 Introduction To Ring
 *************************
@@ -37,7 +39,10 @@ code so that I can get on with the business of defining my own Compojure routes,
 but I'd like to have a better understanding of what's really going on under the
 hood. This document is my attempt to synthesize a lot of different tutorials and
 documents into something in my own words that I can use as a quick guide to
-setting up new projects.
+setting up new projects. 
+
+You'll also want to read the :ref:`Ring Details <ring_details>` document
+(the next document in the series) for some detailed code examples.
 
 
 Fundamentals
