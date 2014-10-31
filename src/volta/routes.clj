@@ -1,5 +1,6 @@
 (ns volta.routes
-  (:require [volta.handlers :as h]
+  (:require [ring.middleware.defaults :as d]
+            [volta.handlers :as h]
             [volta.middleware :as vm]
             [compojure.core :refer [GET ANY defroutes] :as cj]
             [compojure.route :as route]))
@@ -20,7 +21,9 @@
 
 (def wrapped-routes
   (-> all-routes
-      (vm/ignore-trailing-slash)))
+      (vm/ignore-trailing-slash)
+      (vm/wrap-spy "HTTP spy" [#"\.js" #"\.css" #"\favicon.ico"])
+      (d/wrap-defaults d/site-defaults)))
 
 (def main #'wrapped-routes)
 

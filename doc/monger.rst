@@ -1,12 +1,14 @@
+.. _monger:
+
 ************************
 Monger
 ************************
 
-The `Monger`_ project gives you idiomatic Clojure access to MongoDB databases.
+The `Monger library`_ gives you idiomatic Clojure access to MongoDB databases.
 No more punctuation noise hell, yippee! There is an extremely helpful
 `documentation`_ site accompanying the main github repository.
 
-.. _`Monger`: https://github.com/michaelklishin/monger
+.. _`Monger library`: https://github.com/michaelklishin/monger
 
 .. _`documentation`: http://clojuremongodb.info/
 
