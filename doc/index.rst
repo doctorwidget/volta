@@ -20,7 +20,8 @@ Contents:
    compojure
    enlive
    middleware
-
+   sessions
+   friend
 
 
 Indices and tables
