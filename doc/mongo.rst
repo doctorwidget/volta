@@ -5,11 +5,11 @@ MongoDB
 Rationale
 ============
 
-SQL databases are the perfect tool when your data is highly relational and has
-a well-defined structure. However, if your data model is not yet well defined,
-(as is often the case early in development), and if your data is unlikely to
-ever require complex joins, you may be better off with a *document-oriented*
-database. 
+SQL databases are the perfect tool when your data is highly relational and has a
+well-defined structure. However, if your data model is not rigidly defined, (as
+is almost always true early in development, and sometimes permanently true,
+depending on the project), and if your data is unlikely to ever require complex
+joins, you may be better off with a *document-oriented* database.
 
 `MongoDB`_ is a great example of a document-oriented NoSQL database. It's
 designed from the ground up with web applications in mind, with sharding and
@@ -189,17 +189,18 @@ have a tiny bit of one-off data that has some structure, but isn't worth
 creating an entirely separate table for. In those cases, a single denormalized
 JSONfield can act as a safety valve, solving the issue with a minimum amount of
 schema shenanigans. But a "minimum amount" of schema shenanigans is still a
-non-zero amount: everything still must be rigidly defined in advance in the
-overall table schema! 
+non-zero amount: the existence of that JSONfield must still be defined in
+advance in the overall table schema, and every row will include it whether it
+uses it or not!
 
 Mongo takes the idea of using a JSONfield as a safety valve to its logical
-extreme: every part of every document (schema row) is a gigantic denormalized
+extreme: every document is its' own potentially-gigantic fully-denormalized
 JSONfield! With that in mind, every single thing about Mongo is concerned with
 dealing with such documents *quickly* and *efficiently*. The Mongo API is full
-of functions that query and update *inside* gigantic JSON documents far faster
-than you ever could by reading out the whole thing and massaging it yourself
-with manually-written JavaScript code. This is where the value-added magic of
-Mongo lies.
+of functions that query and update *inside* gigantic JSON documents **far**
+faster than you ever could by reading out the whole thing and massaging it
+yourself with manually-written JavaScript code. This is where the value-added
+magic of Mongo lies.
 
 Obviously this approach brings drawbacks as well as benefits (SQL proponents
 would say that it's mostly drawbacks with no real benefits at all!). It's harder

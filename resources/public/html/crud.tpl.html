@@ -1,0 +1,26 @@
+<div id="main">
+   <h1>CRUD</h1>
+   <div> 
+      Demonstrating basic CRUD operations for a single (logged-in!) user.
+   </div>
+   <div>
+     <hr>
+     <div id="loginStatus">Placeholder for login status info</div>
+     <div>
+       <h2>Add a thing</h2>
+       <form action="/crud" method="post">
+           <label for='thingname'>Name:
+               <input type="text"
+                      name="thingname" 
+                      placeholder="Enter thing name">
+           </label>
+           <label for='thingcolor'>Color:
+               <input type="text" 
+                      name="thingcolor" 
+                      placeholder="Enter thing color">
+           <div id="csrf"></div>
+           <input type="submit" value="">
+       </form>
+     </div>
+   </div>
+</div>

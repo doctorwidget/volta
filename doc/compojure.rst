@@ -14,7 +14,7 @@ entry for the web site. This is done by composing many individual routes, where
 you can specify each route based on a few key pieces of data:
 
 #. The HTTP request method
-#. A glob-style string (sadly, you don't have the full power of RegExps here)
+#. A glob-style string (sadly, you don't have the full power of regular expressions)
 #. Expected arguments.
 #. A reference to a single vanilla Ring handler.
 

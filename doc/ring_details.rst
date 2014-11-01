@@ -118,7 +118,7 @@ value for the ``:body`` key, and adds it to a response map along with ``:status
 code, this helper is not for you!
 
 
-Launch Method #3
+Launch Method #2
 -------------------------
 
 Next, instead of having the server take over the REPL, we'll have the server run

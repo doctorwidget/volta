@@ -22,6 +22,8 @@ Contents:
    middleware
    sessions
    friend
+   crud
+   admin
 
 
 Indices and tables

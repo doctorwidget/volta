@@ -10,10 +10,17 @@
    :headers {"Content-Type" "text/html"}
    :body "Hello Volta!"})
 
+(defn simple-response
+  "The ring.util.response helper leaves off the content-type, and some
+   browsers force a file download instead of a page view for that. So
+   we wrap ring.util.response/response with the minimal extra header."
+  [blob]
+  (assoc (rr/response blob) :headers {"Content-Type" "text/html"}))
+
 (defn handler-beta
   "Another REPL example."
   [request]
-  (rr/response
+  (simple-response
    (str "<HTML><BODY><UL>"
           (apply str (for [[k v] request]
               (str "<li>" k " >> " v "</li>")))
@@ -21,16 +28,16 @@
 
 (defn handler-gamma
   [request]
-  (rr/response (str request)))
+  (simple-response (str request)))
 
 (defn red-page
   [request]
-  (rr/response
+  (simple-response
    (str "<HTML><BODY style='background-color:red'>Red</BODY></HTML>")))
 
 (defn blue-page
   [request]
-  (rr/response
+  (simple-response
    (str "<HTML><BODY style='background-color:blue'>Blue</BODY></HTML>")))
 
 
@@ -60,8 +67,9 @@
               :extra-css ["css/volta_home.css"]
                :extra-js ["js/volta_home.js"]}))
 
-
-;; view for session-simple page
+;; ------------------
+;; Simple Sessions
+;; ------------------
 (h/defsnippet session-body
   "public/html/sessions_simple.tpl.html"
   [:div#main]
@@ -71,7 +79,7 @@
                                       (h/content t))
   [:div#csrf] (h/html-content (af/anti-forgery-field)))
 
-(defn sessions-simple [request]
+(defn session-page [request]
   (let [old-session (:session request)
         new-session (update-in old-session [:visit-count] (fnil inc 0))
         new-request (assoc request :session new-session)
@@ -99,3 +107,30 @@
     (assoc (rr/redirect-after-post "/sessions/simple")
       :session new-session)))
 
+
+;;--------------------------
+;; Friend
+;;-------------------------
+(h/defsnippet friend-body "public/html/friend.tpl.html" [:div#main] [])
+
+(defn friend-page [request]
+  (base-page {:title "Friend Demo"
+              :content (friend-body)}))
+
+;;--------------------------
+;; CRUD
+;;--------------------------
+(h/defsnippet crud-body "public/html/crud.tpl.html" [:div#main] [])
+
+(defn crud-page [request]
+  (base-page {:title "CRUD Demo"
+              :content (crud-body)}))
+
+;;-------------------------
+;; Admin
+;;-------------------------
+(h/defsnippet admin-body "public/html/admin.tpl.html" [:div#main] [])
+
+(defn admin-page [request]
+  (base-page {:title "Admin Demo"
+              :content (admin-body)}))

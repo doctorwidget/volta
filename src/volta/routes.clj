@@ -12,8 +12,13 @@
 
 (defroutes session-routes
   (cj/context "/sessions" []
-              (GET "/simple" [] h/sessions-simple)
+              (GET "/simple" [] h/session-page)
               (POST "/simple" [] h/add-todo-item)))
+
+(defroutes auth-routes
+  (GET "/friend" request h/friend-page)
+  (GET "/crud" request h/crud-page)
+  (GET "/admin" request h/admin-page))
 
 (defroutes all-routes
   (cj/context "/greek" [] greek-routes)
@@ -21,9 +26,10 @@
       (GET "/red" [] h/red-page)
       (GET "/blue" [] h/blue-page))
   session-routes
+  auth-routes
   (ANY "/" [] h/volta-home)
   (route/resources "/")
-  (route/not-found "Not Found"))
+  (route/not-found "Not Found. WTF dude."))
 
 (def wrapped-routes
   (-> all-routes

@@ -200,7 +200,8 @@ Confirm that you have access to a Clojure REPL via ``lein repl``.
    By for now!
 
 
- Also, check out the free (failing!) test that *lein* provides for you.
+Also, be sure to check out the free (failing!) test that *lein* provides for
+you.
 
 .. code-block:: bash
 

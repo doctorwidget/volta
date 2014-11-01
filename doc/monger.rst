@@ -65,7 +65,7 @@ collections.
    (require '[monger.db :as md])  ; database-level operations
    ;nil
 
-   (md/get-collection-names d)
+   (md/get-collection-names db)
    ;#{"system.indexes" "testData"}  
 
 

@@ -1,0 +1,26 @@
+<div id="main">
+   <h1>Friend</h1>
+   <div> 
+      Demonstrating basic login / logout capability.
+   </div>
+   <div>
+     <hr>
+     <div id="loginStatus">Placeholder for login status info</div>
+     <div>
+       <h2>Log in or out</h2>
+       <form action="/friend" method="post">
+           <label for='username'>Username:
+               <input type="text"
+                      name="username" 
+                      placeholder="Enter username">
+           </label>
+           <label for='password'>Password:
+               <input type="password" 
+                      name="password" 
+                      placeholder="Enter password">
+           <div id="csrf"></div>
+           <input type="submit" value="">
+       </form>
+     </div>
+   </div>
+</div>
