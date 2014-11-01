@@ -1,5 +1,6 @@
 (ns volta.handlers
-  (:require [ring.util.response :as rr]
+  (:require [ring.util.anti-forgery :as af]
+            [ring.util.response :as rr]
             [net.cgrand.enlive-html :as h]))
 
 (defn handler-alpha
@@ -57,4 +58,44 @@
    (base-page {:title "Project Volta"
               :content (home-body)
               :extra-css ["css/volta_home.css"]
-              :extra-js ["js/volta_home.js"]}))
+               :extra-js ["js/volta_home.js"]}))
+
+
+;; view for session-simple page
+(h/defsnippet session-body
+  "public/html/sessions_simple.tpl.html"
+  [:div#main]
+  [request] ; this time we take an actual argument!
+  [:span#visitCount] (h/content (str (get-in request [:session :visit-count] 0)))
+  [:ul#toDoItems :> :li] (h/clone-for [t (get-in request [:session :todos] [])]
+                                      (h/content t))
+  [:div#csrf] (h/html-content (af/anti-forgery-field)))
+
+(defn sessions-simple [request]
+  (let [old-session (:session request)
+        new-session (update-in old-session [:visit-count] (fnil inc 0))
+        new-request (assoc request :session new-session)
+        response-body (base-page {:title "Simple Sessions"
+                                :content (session-body new-request)
+                                  :extra-css ["../css/volta_sessions.css"]})]
+    {:status 200
+     :headers {"Content-Type" "text/html"}
+     :body response-body
+     :session new-session}))
+
+(defn add-todo-item
+  "Handler for POST requests that want to add a TODO item. Performs
+  the update and then returns a HTTP 303, a code which I never even knew
+  existed. You learn something new every day.
+  Note!: The :params map has keys which have been converted to keywords.
+  But the :form-params map retains the original string keys."
+  [request]
+  (let [items (get-in request [:session :todos] [])
+        new-str (get-in request [:params :todo] :empty)
+        new-items (if (= :empty new-str)
+                    items
+                    (conj items new-str))
+        new-session (assoc (:session request) :todos new-items)]
+    (assoc (rr/redirect-after-post "/sessions/simple")
+      :session new-session)))
+
