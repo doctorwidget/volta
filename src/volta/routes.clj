@@ -1,5 +1,6 @@
 (ns volta.routes
   (:require [ring.middleware.defaults :as d]
+            [volta.db :as vdb]
             [volta.handlers :as h]
             [volta.middleware :as vm]
             [compojure.core :refer [ANY GET POST defroutes] :as cj]
@@ -31,11 +32,14 @@
   (route/resources "/")
   (route/not-found "Not Found. WTF dude."))
 
+(def volta-defaults
+  (assoc-in d/site-defaults [:session :store] vdb/monger-store))
+
 (def wrapped-routes
   (-> all-routes
       (vm/ignore-trailing-slash)
       (vm/wrap-spy "HTTP spy" [#"\.js" #"\.css" #"\favicon.ico"])
-      (d/wrap-defaults d/site-defaults)))
+      (d/wrap-defaults volta-defaults)))
 
 (def main #'wrapped-routes)
 
