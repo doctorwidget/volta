@@ -21,6 +21,7 @@ Contents:
    enlive
    middleware
    sessions
+   authentication
    friend
    crud
    admin

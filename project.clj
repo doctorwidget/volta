@@ -5,11 +5,12 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2268"]
+                 [com.cemerick/friend "0.2.1"]
                  [com.novemberain/monger "2.0.0"]
                  [ring "1.3.1"]
                  [ring/ring-defaults "0.1.2"]
                  [enlive "1.1.5"]]
-
+ 
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-ring "0.8.11"]
             [lein-sphinx "1.0.0"]]
@@ -26,7 +27,6 @@
            :output "doc/_build"
            :rebuild true
            :nitpicky true
-           :setting-values {
-                            :html_theme "agogo"
-                            ; consider haiku, traditional, scrolls, nature, pyramid
-  }})
+           :setting-values {:html_theme "agogo"}})
+           ; consider other themes: haiku, traditional, scrolls, nature, pyramid
+
