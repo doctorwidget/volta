@@ -25,6 +25,8 @@ Contents:
    friend
    crud
    admin
+   heroku
+   openid
 
 
 Indices and tables
