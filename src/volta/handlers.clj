@@ -1,14 +1,22 @@
 (ns volta.handlers
-  (:require [ring.util.anti-forgery :as af]
+  (:require [cemerick.friend :as friend]
+            [ring.util.anti-forgery :as af]
             [ring.util.response :as rr]
             [net.cgrand.enlive-html :as h]))
 
-(defn handler-alpha
-  "For running from the REPL as a simplest-possible example of a server. "
-  [request]
-  {:status 200
-   :headers {"Content-Type" "text/html"}
-   :body "Hello Volta!"})
+;;---------------------------------
+;; Helper functions
+;;---------------------------------
+
+(defn stylesheet
+  "Render one well-formed stylesheet element, given an HREF"
+  [href]
+  (first (h/html [:link {:href href :rel "stylesheet" :type "text/css"}])))
+
+(defn script
+  "Render one well-formed script element, given a SRC"
+  [src]
+  (first (h/html [:script {:src src :type "text/javascript"}])))
 
 (defn simple-response
   "The ring.util.response helper leaves off the content-type, and some
@@ -16,6 +24,37 @@
    we wrap ring.util.response/response with the minimal extra header."
   [blob]
   (assoc (rr/response blob) :headers {"Content-Type" "text/html"}))
+
+(defn login-status
+  "A helper function for returning a string about the current login status.
+   Does not return a complete Ring response!"
+  [request]
+  (if-let [user (friend/identity request)]
+    (apply str "Logged in, with these roles: "
+               (-> user
+                   friend/current-authentication
+                   :roles))
+    "Anonymous User"))
+
+;;---------------------------------
+;; Simple Handlers
+;;
+;; These return a complete response by via plain old string monging.
+;;
+;;---------------------------------
+
+(defn unauthorized
+  "Handler for requests that fail to pass authorization checks."
+  [{:keys [uri] :as request}]
+  (-> (simple-response (str "You are not authorized to view" uri))
+      (rr/status 401)))
+
+(defn handler-alpha
+  "For running from the REPL as a simplest-possible example of a server. "
+  [request]
+  {:status 200
+   :headers {"Content-Type" "text/html"}
+   :body "Hello Volta!"})
 
 (defn handler-beta
   "Another REPL example."
@@ -41,13 +80,12 @@
    (str "<HTML><BODY style='background-color:blue'>Blue</BODY></HTML>")))
 
 
-;; helper function that yields one single stylesheet element
-(defn stylesheet [href]
-  (first (h/html [:link {:href href :rel "stylesheet" :type "text/css"}])))
-
-;; helper function that gives one script element
-(defn script [src]
-  (first (h/html [:script {:src src :type "text/javascript"}])))
+;;---------------------------------
+;; Enlive Handlers
+;;
+;; These all use Enlive to build up more-sophisticated responses.
+;;
+;;---------------------------------
 
 ;; snippet that gives us the complete contents of a fragmentary HTML file
 (h/defsnippet home-body "public/html/home.tpl.html" [:div#main] [])
@@ -65,7 +103,7 @@
    (base-page {:title "Project Volta"
               :content (home-body)
               :extra-css ["css/volta_home.css"]
-               :extra-js ["js/volta_home.js"]}))
+              :extra-js ["js/volta_home.js"]}))
 
 ;; ------------------
 ;; Simple Sessions
@@ -109,13 +147,15 @@
 
 
 ;;--------------------------
-;; Friend
+;; Login
 ;;-------------------------
-(h/defsnippet friend-body "public/html/friend.tpl.html" [:div#main] [])
+(h/defsnippet login-body "public/html/login.tpl.html" [:div#main] [request]
+  [:.loginStatus] (h/content (login-status request))
+  [:div#csrf] (h/html-content (af/anti-forgery-field)))
 
-(defn friend-page [request]
-  (base-page {:title "Friend Demo"
-              :content (friend-body)}))
+(defn login-page [request]
+  (base-page {:title "Login"
+              :content (login-body request)}))
 
 ;;--------------------------
 ;; CRUD
@@ -134,3 +174,12 @@
 (defn admin-page [request]
   (base-page {:title "Admin Demo"
               :content (admin-body)}))
+
+;;--------------------------
+;; User
+;;--------------------------
+(h/defsnippet user-body "public/html/user.tpl.html" [:div#main] [])
+
+(defn user-page [request]
+  (base-page {:title "User Home"
+              :content (user-body)}))

@@ -318,20 +318,16 @@ be applied inside our ``volta.routes/wrapped-routes`` symbol, along with all of
 the other middleware. Meanwhile, the *authorization* process will be invoked as
 wrappers around individual routes.
 
-Start by adjusting the namespace declaration:
+
+A User Store
+----------------
+
+Let's add an in-memory database of users to our pre-existing ``volta.db``
+namespace:
 
 .. code-block:: clojure
 
-    (ns volta.routes
-       (:require [cemerick.friend :as friend]
-                 (cemerick.friend [workflows :as workflows]
-                                  [credentials :as creds])
-                 ;; other requires and imports unchanged 
-                ))
-
-Then let's define some users as a simple map in the same namespace:
-
-.. code-block:: clojure
+    ;requires friend.credentials :as creds
 
     (def mem-users {"admin" {:username "admin"
                              :password (creds/hash-bcrypt "adminpass")
@@ -340,31 +336,264 @@ Then let's define some users as a simple map in the same namespace:
                              :password (creds/hash-bcrypt "scottpass")
                              :roles #{::user}}})
 
-Then wrap the main app with friend as shown earlier, but including all of the
-other middleware we've referenced in other tutorials. 
+Later on, we can define ``db-users`` as a function that actually uses ``Monger``
+to get a list of users. For now, we'll stick with just this simple in-memory
+map. 
+
+
+An Unauthorized Handler
+--------------------------
+
+We will need a function that returns ``HTTP 401`` and tells users that they
+aren't allowed to view resource X. We'll add that as a handler to
+``volta.handlers``.
 
 .. code-block:: clojure
 
-  
+    ; inside volta.handlers
+
+    (defn unauthorized [request]
+       (let [uri (:uri request)]
+         (-> (simple-response (str "You are not authorized to view " uri))
+             (rr/status 401))))
+               
+
+A Login Status Helper
+---------------------------
+
+Let's add a small helper function that any handler can use to read out the
+current user authorization status. For now we'll throw it into the
+``volta.handlers`` namespace, though in the long run it might make sense to have
+a ``util`` namespace for this kind of thing.
+
+.. code-block:: clojure
+
+    ; inside volta.handlers
+     
+    (defn login-status [request]
+          (if-let [user (cemeric.friend/identity request)]
+               (apply str "Logged in, with these roles: " 
+                          (-> user
+                              cemeric.friend/current-authentication 
+                              :roles))
+               "Anonymous User"))
+
+That will return one of two strings: either the elaborate logged-in version
+which includes all current roles, or (if the call to ``cemeric.friend/identity``
+fails) the simple string "Anonymous User".
+
+Pay close attention to the overloading of the word **identity** here! The
+aforementioned ``cemeric.friend/identity`` function pulls out the
+``cemerick.friend/::identity`` key from the session if it exists, or returns
+``nil`` for anonymous users. That function is *not* the same as the Clojure core
+``(identity)`` function. In fact, when you inspect the Friend source code, you
+can see that the core namespace calls ``(:refer-clojure :exclude (identity)))``,
+just to minimize the chances that the two different functions will be confused.
+    
+
+New Routes
+---------------
+
+Next we add three new routes which will be needed to demonstrate the
+complete authorization process:
+
+.. code-block:: clojure
+
+   ;inside volta.routes
+
+   (defroutes auth-routes
+      (GET "/login" request h/login-page)
+      (GET "/logout" request "logging out"))
+
+   (defroutes all-routes
+        ; most of this definition remains unchanged; just add auth-routes
+        auth-routes
+        )
+
+
+In addition to these routes inside ``volta.routes``, you will obviously need to
+create the four handlers referenced above inside ``volta.handlers``. These will
+be standard Enlive snippet and body function pairs, and we won't show all of
+that code here. You will also need to create an HTML fragment for each such
+route; again, we aren't going to copy those fragments to this tutorial: they
+exist in the ``volta/resources/public/html`` directory if you would like to
+inspect them.
+
+
+Namespace Changes
+--------------------
+
+Next, you will need to adjust the namespace for ``volta.routes``:
+
+.. code-block:: clojure
+
+    (ns volta.routes
+       (:require [cemerick.friend :as friend]
+                 (cemerick.friend [workflows :as workflows]
+                                  [credentials :as creds])
+                 [volta.db :as vdb]
+                 ;; other requires and imports unchanged 
+                ))
+
+
+New Middleware
+-------------------
+
+Finally, we can wrap the main app with ``friend/authenticate``. Note that the
+rest of the code is unchanged from prior examples: we're still wrapping with a
+couple of pieces of custom middleware and the outermost wrapper is still
+``ring-defaults``. Sessions are added in that lowest wrapper (the outermost
+wrapper in vanilla Clojure), and so it's important that the friend middleware be
+above it (innermost to it in vanilla Clojure).
+
+.. code-block:: clojure
+
     (def wrapped-routes
         (-> all-routes 
             (vm/ignore-trailing-slash)
             (vm/wrap-spy "HTTP spy" [#"\.js" #"\.css" #"\favicon.ico"])
             (friend/authenticate
-                 {:credential-fn (partial creds/bcrypt-credential-fn mem-users)
+                 {:allow-anon? true
+                  :login-uri "/login"
+                  :default-landing-uri "/"
+                  :unauthorized-handler h/unauthorized
+                  :credential-fn #(creds/bcrypt-credential-fn vdb/mem-users %)
                   :workflows [(workflows/interactive-form)]})
             (d/wrap-defaults volta-defaults)))
 
-
-Now the question is, how on earth does Friend decide where to redirect people if
-they require authentication? That has not yet been specified anywhere. 
-
+Here we see a lot of options supplied to ``friend/authenticate``, most of which
+we have not discussed yet. 
 
 
+:allow-anon
+.................
+
+This allows you to set a blanket authorization for the entire site. If you
+choose to set it to *false*, then every single page requires authorization (any
+level of authorization), whether or not you wrap it that route with
+``authorize``. That would be appropriate for highly secure sites where only
+known users could even see the home page. When ``true`` (the default value),
+only routes that you have explicitly wrapped with ``authorize`` require
+authentication. Since the default is ``true``, we could omit this, but this was
+as good of a place to discuss it as any.
+
+
+:login-uri
+..................
+
+When the Friend middleware determines that someone needs to be authenticated,
+this is where it will redirect the user. The ``/login`` route is one of the ones
+we just created up above; the associated template fragment shows a standard
+login form with ``username`` and ``password`` fields. 
+
+
+:default-landing-uri
+........................
+
+The default URI to redirect newly-authenticated users to. You can override this
+by including an explicit redirect in your own code, but that's up to you to
+handle on a per-route basis. 
+
+
+:unauthorized-handler
+.........................
+
+How to handle user requests where authentication fails. Here we redirect to the
+new ``h/unauthorized`` function that we defined above. 
+
+
+:credentials-fn
+....................
+
+We've already discussed this at some length. Here we implement it as an
+anonymous function, and use the ``db/mem-users`` map as our
+user-finding-function. The final argument (``%``) will be a proposed credentials
+map from the user requesting authentication. 
+
+:workflows
+...................
+
+Finally, ``:workflows``, which we've already discussed above. This site will
+have only one allowed workflow, based on a standard HTTP form. 
 
 
 
+Logging In
+==================================
+
+So when the time finally comes to have the user authenticate, where is the
+handler with the actual login function? *There isn't one*. Whoah. That is pretty
+weird, but it's just the way Friend works. Remember that ``friend/authenticate``
+is middleware; it scans each and every incoming request. When it detects *any* POST
+requests to the anointed ``:login-uri``, it takes over and handles that request.
+In other words, under the hood, ``friend/authenticate`` takes care of setting up
+this route for you:
+
+.. code-block:: clojure
+
+   (POST "/login" request (friend/automagically-handle-me request))
+
+When I was first setting things up based on the official Friend tutorial, I
+noted that their source code did not explicitly set up a ``POST`` route to
+handle logins, and that worried me. I was fairly certain that was an error in
+the documentation and that I would have to add such a route. But it turns out I
+was wrong, and you don't. When you inspect the ``friend`` source
+code, you see that it does check for this automatically as part of the 
+
+.. code-block:: clojure
+
+    ; inside friend.workflows/interactive-form
+  
+       ; most function omitted, but see this snippet
+       (when (and (= :post request-method)  ; AHAH
+                  (= (gets :login-uri #_etc)))
+   
+So Friend in effect configures an extra compojure-style ``POST`` route for you,
+and you should not try to do it yourself. When you specify the ``:login-uri`` as
+an option to ``friend/authenticate``, you are saying *all POST requests to this
+route should trigger Friends' authentication code*. 
+
+As a result, you are not required (or *allowed*) to write the login-handling
+code yourself. Neither do you need to manually delegate any explicit calls to
+it inside any of your handlers. That is *very* different from the way things are
+handled in Django, so it's worth calling out and commenting on.
+
+
+Logging Out
+===============
+
+What about logging out? Here you do have to explicitly create a route, but
+Friend provides you with a simple helper function for it. Up above we defined a
+``/logout`` Compojure route that just returned a string and did nothing else.
+We simply rewrite that to call ``friend/logout*`` instead:
+
+.. code-block:: clojure
+
+   ;; inside volta.routes
+   (defroutes auth-routes
+      (GET "/login" request h/login-page)
+      (GET "/logout" request 
+           (friend/logout* (rr/redirect (str (:context request) "/"))))) 
+
+
+Discuss the fact that logout is just a GET
+In theory might want to make it a POST but on the other hand you do want logging
+out to be easy. Friend lets you do either and does not run behind-the-scenes
+magic on how you decide to wire up your call to ``friend/logout*``. 
 
 
 
+TODO
+=========
 
+Make the login / logout displays toggle nicely depending on login status
+
+(make the logout button appear with the login status display?)
+
+(make the whole loginStatus thing a ``(defsnippet)``?
+
+Make the login status area show username, not just roles
+
+
+Move on to *authorization* (user page, admin page, crud page)
+Re-use the loginStatus code!

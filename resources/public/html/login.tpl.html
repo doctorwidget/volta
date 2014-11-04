@@ -1,14 +1,19 @@
 <div id="main">
    <h1>Login</h1>
    <div> 
-      Demonstrating basic login / logout capability with <strong>Friend</strong>.
+      Demonstrating basic login / logout capability.
    </div>
    <div>
      <hr>
-     <div id="loginStatus">Placeholder for login status info</div>
+     <div class="loginStatusOuter">
+        <p>
+           Your login status:
+        </p>
+         <p class="loginStatus">Placeholder for login status info</p>
+     </div>
      <div>
-       <h2>Log in or out</h2>
-       <form action="/friend" method="post">
+       <h2>Log in</h2>
+       <form action="login" method="POST">
            <label for='username'>Username:
                <input type="text"
                       name="username" 
@@ -19,8 +24,14 @@
                       name="password" 
                       placeholder="Enter password">
            <div id="csrf"></div>
-           <input type="submit" value="">
+           <input type="submit" value="Log In">
        </form>
+     </div>
+     <div>
+        <h2>Log out</h2>
+        <form action="logout" method="GET">
+            <input type="submit" value="Log Out">
+        </form>
      </div>
    </div>
 </div>

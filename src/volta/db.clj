@@ -3,7 +3,8 @@
             [monger.db :as md]
             [monger.collection :as mc]
             [monger.operators :refer :all]
-            [monger.ring.session-store :refer [session-store]])
+            [monger.ring.session-store :refer [session-store]]
+            [cemerick.friend.credentials :as creds])
   (:import org.bson.types.ObjectId))
 
 ; create the connection
@@ -40,4 +41,15 @@
   (mc/find-maps db session-coll {}))
 
 
+
+;;---------------------------------
+;; An in-memory "database"
+;;---------------------------------
+
+(def mem-users {"admin" {:username "admin"
+                         :password (creds/hash-bcrypt "adminpass")
+                         :roles #{::admin}}
+                "scott" {:username "scott"
+                         :password (creds/hash-bcrypt "scottpass")
+                         :roles #{::user}}})
 

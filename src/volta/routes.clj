@@ -1,10 +1,14 @@
 (ns volta.routes
   (:require [ring.middleware.defaults :as d]
+            [ring.util.response :as rr]
             [volta.db :as vdb]
             [volta.handlers :as h]
             [volta.middleware :as vm]
             [compojure.core :refer [ANY GET POST defroutes] :as cj]
-            [compojure.route :as route]))
+            [compojure.route :as route]
+            [cemerick.friend :as friend]
+            (cemerick.friend [workflows :as workflows]
+                             [credentials :as creds])))
 
 (defroutes greek-routes
   (GET "/alpha" [] h/handler-alpha)
@@ -17,9 +21,12 @@
               (POST "/simple" [] h/add-todo-item)))
 
 (defroutes auth-routes
-  (GET "/friend" request h/friend-page)
-  (GET "/crud" request h/crud-page)
-  (GET "/admin" request h/admin-page))
+  (GET "/login" request h/login-page)
+  (GET "/logout" request
+                 (friend/logout* (rr/redirect (str (:context request) "/"))))
+  (GET "/user" request h/user-page)
+  (GET "/admin" request h/admin-page)
+  (GET "/crud" request h/crud-page))
 
 (defroutes all-routes
   (cj/context "/greek" [] greek-routes)
@@ -28,7 +35,7 @@
       (GET "/blue" [] h/blue-page))
   session-routes
   auth-routes
-  (ANY "/" [] h/volta-home)
+  (ANY "/" request h/volta-home)
   (route/resources "/")
   (route/not-found "Not Found. WTF dude."))
 
@@ -39,6 +46,14 @@
   (-> all-routes
       (vm/ignore-trailing-slash)
       (vm/wrap-spy "HTTP spy" [#"\.js" #"\.css" #"\favicon.ico"])
+      (friend/authenticate
+          {:allow-anon? true
+           :login-uri "/login"
+           :default-landing-uri "/"
+           :unauthorized-handler h/unauthorized
+           :credential-fn #(creds/bcrypt-credential-fn vdb/mem-users %)
+           :workflows [(workflows/interactive-form)]
+          })
       (d/wrap-defaults volta-defaults)))
 
 (def main #'wrapped-routes)

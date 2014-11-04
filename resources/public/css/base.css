@@ -1,3 +1,13 @@
 body {
   background-color: antiquewhite;
 }
+
+.loginStatusOuter {
+  border: 2px solid green;
+}
+
+.loginStatus {
+  margin: 2em;
+  padding: 2em;
+  background-color: #DDFFEE;
+}
