@@ -54,7 +54,7 @@
            :login-uri "/login"
            :default-landing-uri "/"
            :unauthorized-handler h/unauthorized
-           :credential-fn #(creds/bcrypt-credential-fn vdb/mem-users %)
+           :credential-fn #(creds/bcrypt-credential-fn vdb/db-users %)
            :workflows [(workflows/interactive-form)]
           })
       (d/wrap-defaults volta-defaults)

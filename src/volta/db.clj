@@ -55,3 +55,22 @@
 
 (derive ::admin ::user)
 
+
+;;-------------------------------------------
+;; A real database of users, using MongoDB
+;;-------------------------------------------
+
+(def user-coll "auth-users")
+
+(defn db-users
+  "Take proposed username as a string and look for that username in the database.
+  Returns a map with the keys expected by friend if a match exists."
+  [targetname]
+  (if-let [user (mc/find-one-as-map db user-coll {:username targetname})]
+    (assoc user :roles (map #(keyword "volta.db" %) (:roles user)))))
+
+
+
+
+
+

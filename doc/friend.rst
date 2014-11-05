@@ -668,7 +668,191 @@ all routes to require authentication (but no specific roles) by default.
 Monger
 =============
 
-Switch to ``Monger`` database
+Switching to the ``Monger`` database will actually be fairly simple. All of the
+relevant code is already encapsulated in the ``volta.db`` namespace. It's even
+more encapsulated than that, really: all of the functionality is completely
+contained in the ``mem-users`` map. To switch over to using a real database, all
+we need to do is write a single function that can perform the same input and
+output as ``mem-users`` does. 
 
 
+
+Stocking The Database
+----------------------
+
+Before we can write a function that queries the database, we must create the
+target collection and insert some users. This will have to be done at the REPL.
+
+Note that this stage will need to be redone on Heroku when we first load up.
+This kind of brittle interaction with a database is common to all web
+applications; some parts of the application always require a manual
+bootstrapping that is outside the scope of the repetitive request serving that
+follows. When we first ran ProtoGenie up on Heroku I had to manually add the
+first few users before we had automated registration working. That will be true
+here as well.
+
+
+Prep The REPL
+....................
+
+Start by running a REPL and requiring some namespaces. 
+
+.. code-block:: clojure
+
+    (require '[volta.db :as v])
+    ; now we can access the volta database as v/db
+    ; and use v/oid as function to generate ObjectIDs
+
+    (require '[cemerick.friend.credentials :as creds])
+    ; now we can hash our credentials rather than storing them as plaintext
+
+Until now, our users have been stored in the ``volta.db/mem-users`` in-memory
+map, which uses simple string keys. That map also re-uses the username, once as
+the outer overall string key and once again under the explicit keyword
+``:username``. All of this will have to be structured differently in Monger,
+because a MongoDB collection is a *vector or list* of documents, not a *map or
+dictionary*. Thus, there is no one single key for each entry. That actually
+makes the overall structure *cleaner*: we will keep the ``:username`` field,
+and it won't be duplicated in Mongo the way it is in ``mem-users``.
+
+.. code-block:: clojure
+
+    (def user-coll "auth-users")
+    ;#'volta.core/user-coll
+
+    (require '[monger.collection :as mc])
+    ;nil
+
+    ;; add one user
+    (mc/insert v/db user-coll {:_id (v/oid) 
+                               :username "root"
+                               :password (creds/hash-bcrypt "rootpass")
+                               :roles #{:volta.db/admin}})
+    ;#<WriteResult {"serverUsed": "127.0.0.1:27017", "ok":1, "n":0}>
+
+
+However, we do need each username to be unique, just like the ``_id`` is.
+Fortunately, Monger lets us declare a *unique index* on any field.
+
+.. code-block:: clojure
+
+    ;; declare unique index -- note the explicit use of (array-map)
+
+    (mc/ensure-index v/db user-coll (array-map :username 1) {:unique true})
+    ;nil
+    
+    ;; double check results
+    (mc/indexes-on v/db user-coll)
+    ; ...an array of two index objects; one for :_id and one for :username
+
+Next, let's add a second user. 
+
+.. code-block:: clojure
+
+    (mc/insert v/db user-coll {:_id (v/oid)
+                               :username "nathan"
+                               :password (creds/hash-bcrypt "nathanpass")
+                               :roles #{:volta.db/user}})
+   ;#<WriteResult...
+
+Then make sure everything is working as expected.
+
+.. code-block:: clojure
+
+    (def all (mc/find-maps v/db user-coll)
+    ;#'volta.core/all
+
+    (count all)
+    ;2
+  
+    (first all)
+    ; {:_id #<ObjectId 545a5968d4c6a59dc2769cac>, :username "root", 
+    ;  :password "$2a$10$xXxUsQ..."
+    ;  :roles ["admin"]}
+ 
+    (def nate (mc/find-maps v/db user-coll {:username "nathan"}
+    ; ({:_id #<ObjectId 545a5b9dd4c6a59dc2769cae>, :username "nathan", 
+    ; :password "$2a$10$f2.1w4W..."
+    ; :roles ["user"]})
+
+Now the database is stocked with data, and we've had a little bit of practice in
+querying it and inspecting the results. It's time to move on to writing a
+function that uses MongoDB instead of our in-memory map of users.
+
+
+
+``db-users``
+------------------
+
+We'll call this function ``db-users``. It needs to do exactly what ``mem-users``
+does in the function position: take a string username and return a Clojure map
+with keys for ``:username``, ``:password`` and ``:roles``.
+
+.. code-block:: clojure
+   
+   ;inside volta.db
+
+   (def user-coll "auth-users")
+
+   (defn db-users
+     "Take proposed username as a string and look for that username in the database.
+     Returns a map with the keys expected by friend if a match exists."
+     [targetname]
+     (if-let [user (mc/find-one-as-map db user-coll {:username targetname})]
+       (assoc user :roles (map #(keyword "volta.db" %) (:roles user)))))
+
+And that's really all there is to it! If we didn't care about fixing the
+namespacing on the ``:roles``, we could just return the value of of ``user``
+from the ``(let)``. But by default, Monger doesn't store namespaced keywords, so
+even though we inserted the ``:roles`` as namespaced keywords, they come back to
+us as plain strings. The Monger team knows about this issue, which is why they
+have a special function for the ``session-store`` used with Friend. We have to
+apply our own fix to this manually for our users database. 
+
+Finally note that I'm not even sure we really *need* to use namespaced keywords
+in the first place! If we just used plain string roles in our calls to
+``friend/authorize``, we could get away without any of this extra code in the
+``db-users`` function. But since we *did* set everything up with named keywords
+up above, it's better to stick with that and show how to correct for it. It's
+not a difficult issue to fix as long as you're aware of it.
+
+
+replace ``mem-users``
+------------------------
+
+Now we just swap out ``mem-users`` for ``db-users`` inside ``volta.routes``:
+
+.. code-block:: clojure
+
+   ;; inside the friend/authenticate block of #'volta.routes/wrapped-routes
+
+   ; ... elided
+   :credential-fn #(creds/bcrypt-credential-fn vdb/db-users %)
+   ; ... 
+    
+And again, that's all there is to it. It seems almost too easy, but there it is.
+Now the two users we inserted into our MongoDB are the only valid ones. The
+``mem-users`` map still exists, but it's not currently used for anything, and
+users cannot log in with those accounts. 
+
+
+summary
+------------
+
+Careful encapsulation makes this final step very easy. It should be clear that
+using multiple databases would be also be straightforward. You would just
+compose a function that called ``or`` on the results from ``db-users`` and 
+``mem-users``; any match from either database would be considered valid for
+logging in. Of course, then you'd run into potential issues with duplicate
+usernames, so this may not be the best place to implement multiple databases.
+But in principle, it's all simple composition, like everything else in Clojure.
+
+
+Conclusion
+==============
+
+Authentication and authorization are painful but necessary tasks for any serious
+web application. Friend tackles these problems in a very idiomatic, Clojuriffic
+way. Once you understand all of the moving pieces, it should be crystal clear 
+how you would go about building on this foundation. 
 
