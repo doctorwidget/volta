@@ -6,12 +6,10 @@
    <div>
      <hr>
      <div class="loginStatusOuter">
-        <p>
-           Your login status:
-        </p>
-         <p class="loginStatus">Placeholder for login status info</p>
+         You are logged in as 
+         <span class="loginStatus">Placeholder for login status info</span>
      </div>
-     <div>
+     <div id="loginForm">
        <h2>Log in</h2>
        <form action="login" method="POST">
            <label for='username'>Username:
@@ -27,7 +25,7 @@
            <input type="submit" value="Log In">
        </form>
      </div>
-     <div>
+     <div id="logoutForm">
         <h2>Log out</h2>
         <form action="logout" method="GET">
             <input type="submit" value="Log Out">

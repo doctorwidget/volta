@@ -30,10 +30,10 @@
    Does not return a complete Ring response!"
   [request]
   (if-let [user (friend/identity request)]
-    (apply str "Logged in, with these roles: "
-               (-> user
-                   friend/current-authentication
-                   :roles))
+    (let [authmap (friend/current-authentication user)
+          username (:username authmap)
+          roles (:roles authmap)]
+      (format "Logged in as %s with these roles: %s" username roles))
     "Anonymous User"))
 
 ;;---------------------------------
@@ -87,9 +87,6 @@
 ;;
 ;;---------------------------------
 
-;; snippet that gives us the complete contents of a fragmentary HTML file
-(h/defsnippet home-body "public/html/home.tpl.html" [:div#main] [])
-
 ;; template that outputs a complete response
 (h/deftemplate base-page
   "public/html/base.html"
@@ -99,9 +96,18 @@
   [:#contents] (h/content (:content context))
   [:body] (h/append (map script extra-js)))
 
+
+;;---------------------------------------
+;; Home (landing) page for entire site
+;;---------------------------------------
+
+;; snippet that gives us the complete contents of a fragmentary HTML file
+(h/defsnippet home-body "public/html/home.tpl.html" [:div#main] [request]
+  [:.loginStatus] (h/content (login-status request)))
+
 (defn volta-home [request]
    (base-page {:title "Project Volta"
-              :content (home-body)
+              :content (home-body request)
               :extra-css ["css/volta_home.css"]
               :extra-js ["js/volta_home.js"]}))
 
@@ -151,6 +157,12 @@
 ;;-------------------------
 (h/defsnippet login-body "public/html/login.tpl.html" [:div#main] [request]
   [:.loginStatus] (h/content (login-status request))
+  [:#loginForm] (if (friend/identity request)
+                  (fn [node] ((h/add-class "hidden") node))
+                  identity)
+  [:#logoutForm] (if (not (friend/identity request))
+                   (fn [node] ((h/add-class "hidden") node))
+                   identity)
   [:div#csrf] (h/html-content (af/anti-forgery-field)))
 
 (defn login-page [request]

@@ -24,9 +24,12 @@
   (GET "/login" request h/login-page)
   (GET "/logout" request
                  (friend/logout* (rr/redirect (str (:context request) "/"))))
-  (GET "/user" request h/user-page)
-  (GET "/admin" request h/admin-page)
-  (GET "/crud" request h/crud-page))
+  (GET "/user" request
+       (friend/authenticated h/user-page))
+  (GET "/admin" request
+       (friend/authorize #{::vdb/admin} h/admin-page))
+  (GET "/crud" request
+       (friend/authorize #{::vdb/user} h/crud-page)))
 
 (defroutes all-routes
   (cj/context "/greek" [] greek-routes)
@@ -44,8 +47,8 @@
 
 (def wrapped-routes
   (-> all-routes
-      (vm/ignore-trailing-slash)
-      (vm/wrap-spy "HTTP spy" [#"\.js" #"\.css" #"\favicon.ico"])
+      (vm/wrap-spy "Inner spy" [#"\.js" #"\.css" #"\favicon.ico"])
+      (vm/ignore-trailing-slash)   
       (friend/authenticate
           {:allow-anon? true
            :login-uri "/login"
@@ -54,7 +57,8 @@
            :credential-fn #(creds/bcrypt-credential-fn vdb/mem-users %)
            :workflows [(workflows/interactive-form)]
           })
-      (d/wrap-defaults volta-defaults)))
+      (d/wrap-defaults volta-defaults)
+      (vm/wrap-spy "Outer spy" [#"\.js" #"\.css" #"\favicon.ico"])))
 
 (def main #'wrapped-routes)
 

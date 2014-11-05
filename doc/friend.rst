@@ -41,11 +41,10 @@ Add Friend as a dependency inside ``project.clj``.
 Authentication
 ====================
       
-Friend authentication is implemented as *middleware*, so that it can potentially
-affect all routes in your application by just adding one block of code.  There
-is exactly one authentication middleware defined in Friend:
-``cemerick.friend/authenticate``, but it can be configured in a wide variety of
-ways by passing along a configuration map.
+Friend authentication is implemented as *middleware*, so that it can affect all
+routes in your application all at once. There is exactly one authentication
+middleware defined in Friend: ``cemerick.friend/authenticate``, but it can be
+configured in a veritable multitude of different ways to suit your needs.
 
 The two most important concepts when authenticating with Friend are
 *credentials* and *workflows*. Each concept has its own namespace inside the
@@ -67,33 +66,32 @@ So for example, adding Friend to your app can be as simple as:
 
 As noted, you *must* have session middleware turned on for this to work, and the
 Friend middleware must come *before* the session middleware if you're using the
-thrush macro.
+thrush macro. If you are instead using ordinary nesting syntax, the Friend
+middleware must be *inner* to the session middleware.
 
 
 
 Workflows
 ----------------------
 
-The *workflow* abstraction encapsulates everything about one authentication
-strategy: so there is one workflow for HTTP Basic authentication, another for
-form-based classic authentication, a third for OpenID, a fourth for OAuth,
-etcetera. Each of requires a completely different sequence of events: *when is
-the user prompted for credentials?*... *who are they sent to?*... *what
-information comes back and how does it come back?*, and so on.
+The *workflow* abstraction encapsulates everything about the flow of control for
+one specific authentication strategy. There is one workflow for HTTP Basic
+authentication, another for form-based classic authentication, a third for
+OpenID, a fourth for OAuth, etcetera. Each one involves a completely different
+sequence of events: *when is the user prompted for credentials?*... *who are
+they sent to?*... *what information comes back and how does it come back?*, and
+so on. 
 
 So *workflows* should be seen as the highest-level abstraction, which are used
-to organize and make sense of the whole process. Contrast that with *credentials
-functions*, which are an essential part of the whole process, but which have a
-much more limited scope of control. Every workflow must have a credential
-function, but the workflow controls when it is invoked, and how important it
-is for that workflow. 
+to organize and make sense of the whole process in a consistent way regardless
+of which authentication strategy you have chosen. 
 
 Note that in the configuration map above, the ``:workflows`` key takes a
 *vector* of workflows. This example has only one workflow, but it is perfectly
 valid to have more than one. When you have multiple workflows, Friend will check
 each workflow in the order provided, until one of them returns a non-nil result.
-So the meaning of the vector is that passing *any one* of those workflows is 
-sufficent; the user does not need to pass *all* of them. 
+So the meaning of the vector is that succeeding with *any one* of those
+workflows is sufficent; the user does not need to pass *all* of them.
 
 This lets you have (for
 example) form-based authentication based on a database for yourself plus a few
@@ -134,11 +132,11 @@ party identity provider has already occurred, and the credentials function is
 only required to detect a value of ``nil``, which is what we get back for failed
 remote authentication.
 
-So in either case, this is where the rubber hits the road. But once this
-function is done judging the login attempt, it has no further responsibilities.
-It has no concept of any more-complicated sequences of events, the way a
-workflow does. The credentials function simply has the job of deciding *yea* or
-*nay*, on this one specific attempt to authenticate. When the answer is *yea*, a
+Note that this makes the *credentials function* much more limited in scope than
+the *workflow* is. Once it is done judging the login attempt, it has no further
+responsibilities. It has no concept of any more-complicated sequences of events,
+the way a workflow does. It simply has the job of deciding *yea* or *nay*, on
+this one specific attempt to authenticate. When the answer is *yea*, a
 *credentials map* is returned, which we will discuss in detail below. When the
 answer is *nay*, a value of ``nil`` is returned. In either case, the credentials
 function has now done its job, and it rides off into the sunset.
@@ -307,9 +305,10 @@ build very complex inheritance hierarchies if you were feeling ambitious.
 Integration
 ========================
 
-Let's put in the most basic example we can of a form-based authentication. We'll
-start by using an in-memory map for our "database" of users. Then once we've
-seen that working, we will modify it to use a real database via ``Monger``. 
+Let us integrate simple form-based authentication and authorization into our
+existing routes. We'll start by checking credentials against an in-memory map
+for our "database" of users. Then once we've seen that working, we will modify
+it to use a real database via ``Monger``.
 
 Because of the way we've been structuring our Ring application, all of our
 Friend code will live inside ``volta.routes``. The *authentication* process is
@@ -368,15 +367,18 @@ a ``util`` namespace for this kind of thing.
 
 .. code-block:: clojure
 
-    ; inside volta.handlers
+   ; inside volta.handlers
      
-    (defn login-status [request]
-          (if-let [user (cemeric.friend/identity request)]
-               (apply str "Logged in, with these roles: " 
-                          (-> user
-                              cemeric.friend/current-authentication 
-                              :roles))
-               "Anonymous User"))
+   (defn login-status
+     "A helper function for returning a string about the current login status.
+      Does not return a complete Ring response!"
+     [request]
+     (if-let [user (friend/identity request)]
+       (let [authmap (friend/current-authentication user)
+             username (:username authmap)
+             roles (:roles authmap)]
+         (format "Logged in as %s with these roles: %s" username roles))
+       "Anonymous User"))
 
 That will return one of two strings: either the elaborate logged-in version
 which includes all current roles, or (if the call to ``cemeric.friend/identity``
@@ -394,7 +396,7 @@ just to minimize the chances that the two different functions will be confused.
 New Routes
 ---------------
 
-Next we add three new routes which will be needed to demonstrate the
+Next we add two new routes which will be needed to demonstrate the
 complete authorization process:
 
 .. code-block:: clojure
@@ -412,12 +414,11 @@ complete authorization process:
 
 
 In addition to these routes inside ``volta.routes``, you will obviously need to
-create the four handlers referenced above inside ``volta.handlers``. These will
-be standard Enlive snippet and body function pairs, and we won't show all of
-that code here. You will also need to create an HTML fragment for each such
-route; again, we aren't going to copy those fragments to this tutorial: they
-exist in the ``volta/resources/public/html`` directory if you would like to
-inspect them.
+create the the handler referenced above inside ``volta.handlers``. This will be
+a standard Enlive snippet and body function pair, and we won't show all of that
+code here. You will also need to create an HTML fragment for the route, which is
+just a very ordinary looking HTML form with ``username`` and ``password``
+fields. You can inspect it inside the ``volta/resources/public/html`` directory.
 
 
 Namespace Changes
@@ -538,13 +539,14 @@ noted that their source code did not explicitly set up a ``POST`` route to
 handle logins, and that worried me. I was fairly certain that was an error in
 the documentation and that I would have to add such a route. But it turns out I
 was wrong, and you don't. When you inspect the ``friend`` source
-code, you see that it does check for this automatically as part of the 
+code, you see that it does check for this automatically as part of the
+``interactive-form`` workflow:
 
 .. code-block:: clojure
 
     ; inside friend.workflows/interactive-form
   
-       ; most function omitted, but see this snippet
+       ; most of the function omitted, but see this snippet
        (when (and (= :post request-method)  ; AHAH
                   (= (gets :login-uri #_etc)))
    
@@ -565,7 +567,8 @@ Logging Out
 What about logging out? Here you do have to explicitly create a route, but
 Friend provides you with a simple helper function for it. Up above we defined a
 ``/logout`` Compojure route that just returned a string and did nothing else.
-We simply rewrite that to call ``friend/logout*`` instead:
+Now we rewrite that to delegate to ``friend/logout*`` instead of just returning
+a string:
 
 .. code-block:: clojure
 
@@ -576,24 +579,96 @@ We simply rewrite that to call ``friend/logout*`` instead:
            (friend/logout* (rr/redirect (str (:context request) "/"))))) 
 
 
-Discuss the fact that logout is just a GET
-In theory might want to make it a POST but on the other hand you do want logging
-out to be easy. Friend lets you do either and does not run behind-the-scenes
-magic on how you decide to wire up your call to ``friend/logout*``. 
+The first thing to note is that logging out is handled in a fundamentally
+different way than logging in was. Logging in used implicit middleware magic
+that you configure only tangentially via the ``:login-fn`` key. In contrast, you
+manually control logging out, triggering it as soon as you call
+``(friend/logout*)``.
+
+The other thing worth pointing out is that we've chosen to trigger logging out
+inside a ``GET`` route. In theory you should probably do this inside of a
+``POST`` route, since logging out is *never* idempotent (something has changed
+on the server, by definition). But on the other hand, it is crucial that logging
+out be easy and foolproof: more harm is caused by people walking away from a
+keyboard without logging out than is caused by people logging out on accident.
+*A foolish consistency is the hobgoblin of little minds*, and so we choose to
+err on the side of safety over technical correctness.
 
 
 
-TODO
-=========
+Authorization
+==================
 
-Make the login / logout displays toggle nicely depending on login status
+Once we've got everything configured to support logging in and logging out, the
+bulk of the configuration work is done. As mentioned earlier, *authorization* is
+handled on a route-by-route basis using specific helpers, rather than being
+configured as middleware. Let's add a few more routes for pages that we will
+fill in during the next few tutorials:
 
-(make the logout button appear with the login status display?)
+.. code-block:: clojure
 
-(make the whole loginStatus thing a ``(defsnippet)``?
+   ; inside volta.routes
 
-Make the login status area show username, not just roles
+   (defroutes auth-routes
+     (GET "/login" request h/login-page)
+     (GET "/logout" request
+                    (friend/logout* (rr/redirect (str (:context request) "/"))))
+     (GET "/user" request h/user-page)
+     (GET "/admin" request h/admin-page)
+     (GET "/crud" request h/crud-page))   
+
+As before, we won't explicitly show the other tasks associated with setting up a
+route: each route needs the named handler function, which will live inside
+``volta.handlers``, and an HTML fragment of the proper name inside
+``resources/public/html``. Those things are available for you to inspect but we
+will not duplicate them here.
+
+Next, we will use the ``friend/authenticated`` helper to make the ``/user`` URI
+only accessible to authenticated users. This helper does *not* care which roles
+the current user has: it only cares that they *have* been authenticated. 
+
+After that, we will wrap the ``/admin`` URI with ``friend/authorize`` and
+specify that only users with the ``::admin`` role can visit this page. Finally,
+we will wrap the ``/crud`` URI with ``friend/authorize`` and specify that users
+with the ``::user`` role can visit it. 
+
+.. code-block:: clojure
+
+   ; inside volta.routes
+
+   (defroutes auth-routes
+     (GET "/login" request h/login-page)
+     (GET "/logout" request
+                    (friend/logout* (rr/redirect (str (:context request) "/"))))
+     (GET "/user" request 
+           (friend/authenticated h/user-page))
+     (GET "/admin" request 
+           (friend/authorize #{::vdb/admin} h/admin-page))
+     (GET "/crud" request 
+           (friend/authorize #{::vdb/user} h/crud-page)))  
+
+Once you've done all of that, those routes will be protected. Unauthenticated
+users will be bounced to the ``/login`` route when they try to visit any of the
+three protected routes. Anyone logged in as ``::user`` will be able to visit
+``/user`` and ``/crud``, but will be told they are unauthorized when they try to
+visit ``/admin``. And anyone logged in as ``::admin`` will be able to visit all
+three routes (assuming you called ``(derive ::admin ::user)`` inside
+``volta.db``, as we suggested above). 
+
+Meanwhile, all of the previously-defined routes remain accessible to everyone
+under all circumstances. When you have ``::allow-anon?`` set to ``true`` (which
+it is by default) Friend authorization only applies where you explicitly wrap a
+route. By default, *everything not forbidden is allowed*. 
+
+In contrast, if you're trying to make a private site, you should specify 
+``:allow-anon? false`` when configuring the middleware. That will cause
+all routes to require authentication (but no specific roles) by default. 
 
 
-Move on to *authorization* (user page, admin page, crud page)
-Re-use the loginStatus code!
+Monger
+=============
+
+Switch to ``Monger`` database
+
+
+

@@ -3,11 +3,19 @@ body {
 }
 
 .loginStatusOuter {
-  border: 2px solid green;
+  border: 1px dotted green;
+  text-align: center;
+  padding: 0.25em;
 }
 
 .loginStatus {
-  margin: 2em;
-  padding: 2em;
+  margin: 0 auto;
+  padding: 0.25em;
   background-color: #DDFFEE;
+}
+
+.hidden {
+  visibility: hidden;
+  display: none;
+  opacity: 0;
 }

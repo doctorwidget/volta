@@ -53,3 +53,5 @@
                          :password (creds/hash-bcrypt "scottpass")
                          :roles #{::user}}})
 
+(derive ::admin ::user)
+
