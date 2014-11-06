@@ -19,3 +19,54 @@ body {
   display: none;
   opacity: 0;
 }
+
+form label {
+   display: block;
+}
+
+form input[type=text] {
+   min-width: 40em;
+}
+
+form label textarea {
+  position: relative;
+  top: 1.5em;
+}
+
+input[type=submit] {
+  margin: 1em;
+  padding: 1em;
+}
+
+div.buttonbar form {
+   display: inline;
+}
+
+div.buttonbar form button {
+   padding: 1em;
+}
+
+div.oneNote {
+  padding: 1em;
+  margin: 1em;
+  border: thick double #003366;
+  position: relative;
+}
+
+div.oneNote span {
+  padding: 1em;
+  margin: 0.5em;
+  border-left: 1px dotted blue;
+}
+
+div.oneNote span.contents {
+  width: 100%;
+  text-align: center;
+}
+
+div.oneNote a.delete {
+  color: red !important;
+  position: absolute;
+  right: 0;
+  top: 0;
+}

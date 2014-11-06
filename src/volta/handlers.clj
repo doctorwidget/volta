@@ -205,18 +205,29 @@
               :content (crud-body)}))
 
 (h/defsnippet crud-list-body "public/html/crud-list.tpl.html" [:div#main]
-  [username total status]
+  [username notes status]
   [:.currentUser] (h/content username)
-  [:.noteCount] (h/content (str total))
+  [:.noteCount] (h/content (str (count notes)))
+  [:#allNotes :.oneNote] (h/clone-for [note notes]
+                                      [:div.oneNote] (h/set-attr :oid (:_id note))
+                                      [:div.oneNote :a.title] (h/content (:title note))
+                                      [:div.oneNote :a.title] (h/set-attr :href
+                                                                (str "/crud/" (:_id note) "/update"))
+                                      [:div.oneNote :.modified] (h/content
+                                                                     (:modified note "(?)"))
+                                      [:div.oneNote :.contents] (h/content
+                                                                 (:contents note "(none)"))
+                                      [:div.oneNote :a.delete] (h/content "X"))
   [:.loginStatus] (h/content status))   
 
 (defn crud-list-page [request]
   (let [authmap (auth-map request)
         username (:username authmap)
         uuid (:_id authmap)
-        total (count (v/get-notes uuid))
+        notes (v/get-notes uuid)
+        total (count notes)
         status (login-status request)
-        contents (crud-list-body username total status)] 
+        contents (crud-list-body username notes status)] 
     (base-page {:title "Note List"
                 :content contents})))
 
@@ -243,3 +254,44 @@
                      title contents username uuid))
     (v/new-note! title contents uuid)
     (rr/redirect-after-post "/crud/list")))
+
+(h/defsnippet crud-update-body "public/html/crud-create.tpl.html" [:div#main]
+  [username status note]
+  [:.currentUser] (h/content username)
+  [:div#csrf] (h/html-content (af/anti-forgery-field))
+  [:h1 :span.verb] (h/content "Update")
+  [:input.title] (h/set-attr :value (:title note "wtfnil"))
+  ;; note: inputs need h/set-attr
+  [:textarea.contents] (h/content (:contents note "wtfnil"))
+  ;; but textareas need h/content!
+  [[:input (h/attr= :type "submit")]] (h/set-attr :value "Update")
+  [:.loginStatus] (h/content status))
+
+(defn crud-update-page
+  [request id]
+  (let [authmap (auth-map request)
+        username (:username authmap)
+        status (login-status request)
+        note (v/get-note-from-id (v/str->oid id))
+        contents (crud-update-body username status note)]
+    (base-page {:title "Update Note"
+                :content contents})))
+
+(defn crud-update!
+  [{{:keys [title contents]} :params :as request} id]
+  (let [authmap (auth-map request)
+        username (:username authmap)
+        userid (:_id authmap)
+        noteid (v/str->oid id)
+        note (v/get-note-from-id noteid)
+        ownerid (:owner note)]
+    (if (= ownerid userid)
+      (do
+        (println (format "Updating note %s for %s (%s)"
+                         noteid username userid))
+        (v/update-note! noteid title contents)
+        (rr/redirect-after-post "/crud/list"))
+      ({:status 403
+        :headers {}
+        :body "Unauthorized!"}))))
+

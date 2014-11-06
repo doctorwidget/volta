@@ -1,15 +1,22 @@
 <div id="main">
    <h1><span class="currentUser"></span>s' notes</h1>
-   <div class="allNotes">
+   <div id="allNotes">
          <h3>You have <span class="noteCount"></span> notes.</h3>
          <div class="oneNote" oid="">
-             <a href="" class="noteTitle">
-             <span class="noteModified"></span>
+             <a href="" class="title"></a>
+             <span class="modified"></span>
+             <span class="contents"></span>
+             <span><a class="delete" href=""></a></span>
          </div><!-- ./.oneNote -->
    </div><!-- ./.allNotes -->
-   <div>
-      <a href="/crud/create">Add note!</a>
-   </div>
+   <div class="buttonbar">
+      <form method="GET" action="/crud">
+         <button>CRUD Home</button>
+      </form>
+      <form method="GET" action="/crud/create">
+         <button>Add note!</button>
+      </form>
+   </div><!-- ./.buttonbar -->
    <hr>
    <div class="loginStatus">Placeholder for login status info</div>
 </div><!-- ./#main -->

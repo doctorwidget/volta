@@ -20,6 +20,12 @@
   []
   (ObjectId.))
 
+(defn str->oid
+  "Generate an ObjectId instance from a string input. Useful because HTTP
+   forms will always have strings submitted, not ObjectId instances!"
+  [input-string]
+  (ObjectId. input-string))
+
 ;; This symbol will be an instance suitable for plugging into
 ;; the ring-defaults configuration map under the :session-store key
 (def monger-store (session-store db session-coll))
@@ -88,7 +94,24 @@
                            :owner uuid}))
 
 (defn get-notes
-  "Get all of the notes associated with a single user, specified by their UUID"
+  "Get all of the notes associated with a single *user*, specified by the UUID
+  of the *user*. The input must be an *instance* of ObjectId, not a string."
   [uuid]
   (mc/find-maps db note-coll {:owner uuid}))
+
+(defn get-note-from-id
+  "Get the single note with the given UUID. The UUID is that of the *note*.
+  The input must be an *intance* of ObjectId, not a string."
+  [uuid]
+  (mc/find-one-as-map db note-coll {:_id uuid}))
+
+
+(defn update-note!
+  "Update a note. We could also use mc/update-by-id here, but for now I prefer
+  the more generalized (but more verbose) syntax."
+  [noteid title contents]
+  (mc/update db note-coll
+             {:_id noteid}
+             {$set {:title title :contents contents}}
+             {:multi false}))
 
