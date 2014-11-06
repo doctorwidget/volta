@@ -31,6 +31,12 @@
   (GET "/crud" request
        (friend/authorize #{::vdb/user} h/crud-page)))
 
+(defroutes crud-routes
+  (cj/context "/crud" [] 
+              (GET "/list" [] h/crud-list-page)
+              (GET "/create" [] h/crud-create-page)
+              (POST "/create" [] h/crud-create!)))
+ 
 (defroutes all-routes
   (cj/context "/greek" [] greek-routes)
   (cj/context "/colors" []
@@ -38,6 +44,7 @@
       (GET "/blue" [] h/blue-page))
   session-routes
   auth-routes
+  (friend/wrap-authorize crud-routes #{::vdb/user})
   (ANY "/" request h/volta-home)
   (route/resources "/")
   (route/not-found "Not Found. WTF dude."))

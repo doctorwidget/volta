@@ -594,6 +594,14 @@ keyboard without logging out than is caused by people logging out on accident.
 *A foolish consistency is the hobgoblin of little minds*, and so we choose to
 err on the side of safety over technical correctness.
 
+With that in mind, an even *more* lenient way to allow logging out would be to
+use the ``(friend/logout)`` wrapper (note: no asterisk) around an ``ANY`` route:
+
+.. code-block:: clojure
+
+   (friend/logout (ANY  "/logout" request (rr/redirect "/")))
+
+As always, there is more than one way to do it. 
 
 
 Authorization

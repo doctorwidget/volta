@@ -2,7 +2,8 @@
   (:require [cemerick.friend :as friend]
             [ring.util.anti-forgery :as af]
             [ring.util.response :as rr]
-            [net.cgrand.enlive-html :as h]))
+            [net.cgrand.enlive-html :as h]
+            [volta.db :as v]))
 
 ;;---------------------------------
 ;; Helper functions
@@ -35,6 +36,13 @@
           roles (:roles authmap)]
       (format "Logged in as %s with these roles: %s" username roles))
     "Anonymous User"))
+
+(defn auth-map
+  "A helper function that gives us the authmap for a request, if any"
+  [request]
+  (if-let [user (friend/identity request)]
+    (friend/current-authentication user)))
+
 
 ;;---------------------------------
 ;; Simple Handlers
@@ -169,15 +177,6 @@
   (base-page {:title "Login"
               :content (login-body request)}))
 
-;;--------------------------
-;; CRUD
-;;--------------------------
-(h/defsnippet crud-body "public/html/crud.tpl.html" [:div#main] [])
-
-(defn crud-page [request]
-  (base-page {:title "CRUD Demo"
-              :content (crud-body)}))
-
 ;;-------------------------
 ;; Admin
 ;;-------------------------
@@ -195,3 +194,52 @@
 (defn user-page [request]
   (base-page {:title "User Home"
               :content (user-body)}))
+
+;;--------------------------
+;; CRUD
+;;--------------------------
+(h/defsnippet crud-body "public/html/crud.tpl.html" [:div#main] [])
+
+(defn crud-page [request]
+  (base-page {:title "CRUD Demo"
+              :content (crud-body)}))
+
+(h/defsnippet crud-list-body "public/html/crud-list.tpl.html" [:div#main]
+  [username total status]
+  [:.currentUser] (h/content username)
+  [:.noteCount] (h/content (str total))
+  [:.loginStatus] (h/content status))   
+
+(defn crud-list-page [request]
+  (let [authmap (auth-map request)
+        username (:username authmap)
+        uuid (:_id authmap)
+        total (count (v/get-notes uuid))
+        status (login-status request)
+        contents (crud-list-body username total status)] 
+    (base-page {:title "Note List"
+                :content contents})))
+
+(h/defsnippet crud-create-body "public/html/crud-create.tpl.html" [:div#main]
+  [username status]
+  [:.currentUser] (h/content username)
+  [:div#csrf] (h/html-content (af/anti-forgery-field))
+  [:.loginStatus] (h/content status))
+
+(defn crud-create-page [request]
+  (let [authmap (auth-map request)
+        username (:username authmap)
+        status (login-status request)
+        contents (crud-create-body username status)]
+    (base-page {:title "New Note"
+                :content contents})))
+
+(defn crud-create!
+  [{{:keys [title contents]} :params :as request}]
+  (let [authmap (auth-map request)
+        username (:username authmap)
+        uuid (:_id authmap)]  
+    (println (format "New note titled %s (contents: %s) for %s (%s)"
+                     title contents username uuid))
+    (v/new-note! title contents uuid)
+    (rr/redirect-after-post "/crud/list")))

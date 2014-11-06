@@ -73,4 +73,22 @@
 
 
 
+;;-------------------------------------------
+;; Note-Related Functions
+;;-------------------------------------------
+
+(def note-coll "user-notes")
+
+(defn new-note!
+  "Add a new note to the database"
+  [title contents uuid]
+  (mc/insert db note-coll {:_id (oid)
+                           :title title
+                           :contents contents
+                           :owner uuid}))
+
+(defn get-notes
+  "Get all of the notes associated with a single user, specified by their UUID"
+  [uuid]
+  (mc/find-maps db note-coll {:owner uuid}))
 
