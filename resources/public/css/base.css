@@ -70,3 +70,36 @@ div.oneNote a.delete {
   right: 0;
   top: 0;
 }
+
+form.deleteForm {
+  width: 100%;
+  text-align: center;
+}
+
+form.deleteForm input {
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 140%;
+  background-color: #FF8844;
+  margin: 0.5em;
+  padding: 0.5em;
+}
+
+form.deleteForm input:hover {
+  background-color: #FF4400;
+}
+
+p.warning {
+   width: 100%;
+   text-align: center;
+}
+
+p.warning span.title {
+  font-style: italic;
+  color: blue;
+}
+
+p.warning span.danger {
+  font-weight: bold;
+  color: red;
+}

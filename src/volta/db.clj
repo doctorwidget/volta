@@ -93,15 +93,15 @@
                            :contents contents
                            :owner uuid}))
 
-(defn get-notes
+(defn all-notes-for-user
   "Get all of the notes associated with a single *user*, specified by the UUID
-  of the *user*. The input must be an *instance* of ObjectId, not a string."
+  of the *owner*. The input must be an *instance* of ObjectId, not a string."
   [uuid]
   (mc/find-maps db note-coll {:owner uuid}))
 
 (defn get-note-from-id
   "Get the single note with the given UUID. The UUID is that of the *note*.
-  The input must be an *intance* of ObjectId, not a string."
+  The input must be an *instance* of ObjectId, not a string."
   [uuid]
   (mc/find-one-as-map db note-coll {:_id uuid}))
 
@@ -109,9 +109,15 @@
 (defn update-note!
   "Update a note. We could also use mc/update-by-id here, but for now I prefer
   the more generalized (but more verbose) syntax."
-  [noteid title contents]
+  [uuid title contents]
   (mc/update db note-coll
-             {:_id noteid}
+             {:_id uuid}
              {$set {:title title :contents contents}}
              {:multi false}))
+
+(defn delete-note!
+  "Delete a note. Uses the more-verbose mc/remove-by-id syntax, just to minimize
+  the chances of accidentally deleting the whole collection. DOH!"
+  [uuid]
+  (mc/remove-by-id db note-coll uuid))
 

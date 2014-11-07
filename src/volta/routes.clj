@@ -38,7 +38,11 @@
   (GET "/:id/update" [id :as request]
        (h/crud-update-page request id))
   (POST "/:id/update" [id :as request]
-        (h/crud-update! request id)))
+        (h/crud-update! request id))
+  (GET "/:id/delete" [id :as request]
+       (h/crud-delete-page request id))
+  (POST "/:id/delete" [id :as request]
+        (h/crud-delete! request id)))
  
 (defroutes all-routes
   (cj/context "/greek" [] greek-routes)

@@ -211,20 +211,24 @@
   [:#allNotes :.oneNote] (h/clone-for [note notes]
                                       [:div.oneNote] (h/set-attr :oid (:_id note))
                                       [:div.oneNote :a.title] (h/content (:title note))
-                                      [:div.oneNote :a.title] (h/set-attr :href
-                                                                (str "/crud/" (:_id note) "/update"))
+                                      [:div.oneNote :a.title]
+                                      (h/set-attr :href
+                                                  (str "/crud/" (:_id note) "/update"))
                                       [:div.oneNote :.modified] (h/content
                                                                      (:modified note "(?)"))
                                       [:div.oneNote :.contents] (h/content
                                                                  (:contents note "(none)"))
-                                      [:div.oneNote :a.delete] (h/content "X"))
+                                      [:div.oneNote :a.delete] (h/content "X")
+                                      [:div.oneNote :a.delete]
+                                      (h/set-attr :href
+                                                  (str "/crud/" (:_id note) "/delete")))
   [:.loginStatus] (h/content status))   
 
 (defn crud-list-page [request]
   (let [authmap (auth-map request)
         username (:username authmap)
-        uuid (:_id authmap)
-        notes (v/get-notes uuid)
+        user-id (:_id authmap)
+        notes (v/all-notes-for-user user-id)
         total (count notes)
         status (login-status request)
         contents (crud-list-body username notes status)] 
@@ -237,7 +241,9 @@
   [:div#csrf] (h/html-content (af/anti-forgery-field))
   [:.loginStatus] (h/content status))
 
-(defn crud-create-page [request]
+(defn crud-create-page
+  "Handles GET requests to create a new note"
+  [request]
   (let [authmap (auth-map request)
         username (:username authmap)
         status (login-status request)
@@ -246,6 +252,7 @@
                 :content contents})))
 
 (defn crud-create!
+  "Handles POST requests to create a new note"
   [{{:keys [title contents]} :params :as request}]
   (let [authmap (auth-map request)
         username (:username authmap)
@@ -268,6 +275,7 @@
   [:.loginStatus] (h/content status))
 
 (defn crud-update-page
+  "Handles GET requests to update a particular note"
   [request id]
   (let [authmap (auth-map request)
         username (:username authmap)
@@ -278,20 +286,65 @@
                 :content contents})))
 
 (defn crud-update!
+  "Handles POST requests to update a particular note."
   [{{:keys [title contents]} :params :as request} id]
   (let [authmap (auth-map request)
         username (:username authmap)
-        userid (:_id authmap)
-        noteid (v/str->oid id)
-        note (v/get-note-from-id noteid)
-        ownerid (:owner note)]
-    (if (= ownerid userid)
+        user-id (:_id authmap)
+        note-id (v/str->oid id)
+        note (v/get-note-from-id note-id)
+        owner-id (:owner note)]
+    (if (= owner-id user-id)
       (do
         (println (format "Updating note %s for %s (%s)"
-                         noteid username userid))
-        (v/update-note! noteid title contents)
+                         note-id username user-id))
+        (v/update-note! note-id title contents)
         (rr/redirect-after-post "/crud/list"))
-      ({:status 403
-        :headers {}
-        :body "Unauthorized!"}))))
+      {:status 401
+       :headers {}
+       :body "You can only update notes you own"})))
+
+
+(h/defsnippet crud-delete-body "public/html/crud-delete.tpl.html" [:div#main]
+  [status note]
+  [:div#csrf] (h/html-content (af/anti-forgery-field))
+  [:form.deleteForm] (h/set-attr "action" (str  "/crud/" (:_id note) "/delete"))
+  [:span.title] (h/content (:title note "wtfnil"))
+  [:.loginStatus] (h/content status))
+
+(defn crud-delete-page
+  "Handles GET requests to delete a note"
+  [request id]
+  (let [authmap (auth-map request)
+        user-id (:_id authmap)
+        status (login-status request)
+        note-id (v/str->oid id)
+        note (v/get-note-from-id note-id)
+        owner-id (:owner note)
+        contents (crud-delete-body status note)]
+    (if (= owner-id user-id)
+      (base-page {:title "Delete Note"
+                  :content contents})
+      {:status 401
+       :headers {}
+       :body "You can only delete notes you own, sorry."})))
+
+
+(defn crud-delete!
+  "Handles POST requests to delete a particular note."
+  [{{:keys [title contents]} :params :as request} id]
+  (let [authmap (auth-map request)
+        user-id (:_id authmap)
+        note-id (v/str->oid id)
+        note (v/get-note-from-id note-id)
+        owner-id (:owner note)]
+    (if (= owner-id user-id)
+      (do
+        (v/delete-note! note-id)
+        (rr/redirect-after-post "/crud/list"))
+      {:status 401
+       :headers {}
+       :body "You can only delete notes you own. We mean it!"})))
+
+
 
