@@ -725,7 +725,7 @@ and it won't be duplicated in Mongo the way it is in ``mem-users``.
 
 .. code-block:: clojure
 
-    (def user-coll "auth-users")
+    (def user-coll "auth_users")
     ;#'volta.core/user-coll
 
     (require '[monger.collection :as mc])
@@ -738,6 +738,16 @@ and it won't be duplicated in Mongo the way it is in ``mem-users``.
                                :roles #{:volta.db/admin}})
     ;#<WriteResult {"serverUsed": "127.0.0.1:27017", "ok":1, "n":0}>
 
+
+Note that we choose the name *auth_users* for the collection, rather than the
+more-Clojuriffic *auth-users*. Under the hood, Mongo is all about JavaScript,
+and dashes are not legal in variable names in JavaScript. The Monger wrapper
+we're using will elegantly protect you from that issue as long as you stay in a
+Clojure environment. But if you ever want to go into a genuine Mongo shell (as
+opposed to using Monger in a Clojure REPL), you will be better off with
+underscores instead of dashes. Since Clojure works fine with either convention,
+we choose to take the route of lowest possible future hassle, and use
+underscores instead of dashes.
 
 However, we do need each username to be unique, just like the ``_id`` is.
 Fortunately, Monger lets us declare a *unique index* on any field.
@@ -800,7 +810,7 @@ with keys for ``:username``, ``:password`` and ``:roles``.
    
    ;inside volta.db
 
-   (def user-coll "auth-users")
+   (def user-coll "auth_users") ; underscores again
 
    (defn db-users
      "Take proposed username as a string and look for that username in the database.

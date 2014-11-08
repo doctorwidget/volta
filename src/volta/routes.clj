@@ -32,9 +32,9 @@
        (friend/authorize #{::vdb/user} h/crud-page)))
 
 (defroutes crud-routes
-  (GET "/list" [] h/crud-list-page)
   (GET "/create" [] h/crud-create-page)
   (POST "/create" [] h/crud-create!)
+  (GET "/list" [] h/crud-list-page)
   (GET "/:id/update" [id :as request]
        (h/crud-update-page request id))
   (POST "/:id/update" [id :as request]

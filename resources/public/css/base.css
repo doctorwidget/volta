@@ -53,15 +53,33 @@ div.oneNote {
   position: relative;
 }
 
-div.oneNote span {
+div.oneNote div.contents {
   padding: 1em;
   margin: 0.5em;
   border-left: 1px dotted blue;
-}
-
-div.oneNote span.contents {
   width: 100%;
   text-align: center;
+  display: inline-block;
+}
+
+div.oneNote div.timestamps {
+  display: inline-block;
+  position: relative;
+  min-width: 30em;
+  font-size: 70%;
+  font-family: monospace;
+}
+
+div.timestamps span.created {
+  position: absolute;
+  top: -2.5em;
+  left: 1em;
+}
+
+div.timestamps span.modified {
+  position: absolute;
+  top: -1.25em;
+  left: 1em;
 }
 
 div.oneNote a.delete {

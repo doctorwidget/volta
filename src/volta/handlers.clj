@@ -198,42 +198,12 @@
 ;;--------------------------
 ;; CRUD
 ;;--------------------------
-(h/defsnippet crud-body "public/html/crud.tpl.html" [:div#main] [])
+(h/defsnippet crud-body "public/html/crud.tpl.html" [:div#main] [request]
+  [:.loginStatus] (h/content (-> request auth-map :username)))
 
 (defn crud-page [request]
   (base-page {:title "CRUD Demo"
-              :content (crud-body)}))
-
-(h/defsnippet crud-list-body "public/html/crud-list.tpl.html" [:div#main]
-  [username notes status]
-  [:.currentUser] (h/content username)
-  [:.noteCount] (h/content (str (count notes)))
-  [:#allNotes :.oneNote] (h/clone-for [note notes]
-                                      [:div.oneNote] (h/set-attr :oid (:_id note))
-                                      [:div.oneNote :a.title] (h/content (:title note))
-                                      [:div.oneNote :a.title]
-                                      (h/set-attr :href
-                                                  (str "/crud/" (:_id note) "/update"))
-                                      [:div.oneNote :.modified] (h/content
-                                                                     (:modified note "(?)"))
-                                      [:div.oneNote :.contents] (h/content
-                                                                 (:contents note "(none)"))
-                                      [:div.oneNote :a.delete] (h/content "X")
-                                      [:div.oneNote :a.delete]
-                                      (h/set-attr :href
-                                                  (str "/crud/" (:_id note) "/delete")))
-  [:.loginStatus] (h/content status))   
-
-(defn crud-list-page [request]
-  (let [authmap (auth-map request)
-        username (:username authmap)
-        user-id (:_id authmap)
-        notes (v/all-notes-for-user user-id)
-        total (count notes)
-        status (login-status request)
-        contents (crud-list-body username notes status)] 
-    (base-page {:title "Note List"
-                :content contents})))
+              :content (crud-body request)}))
 
 (h/defsnippet crud-create-body "public/html/crud-create.tpl.html" [:div#main]
   [username status]
@@ -261,6 +231,35 @@
                      title contents username uuid))
     (v/new-note! title contents uuid)
     (rr/redirect-after-post "/crud/list")))
+
+(h/defsnippet crud-list-body "public/html/crud-list.tpl.html" [:div#main]
+  [username notes status]
+  [:.currentUser] (h/content username)
+  [:.noteCount] (h/content (str (count notes)))
+  [:.loginStatus] (h/content status)
+  [:#allNotes :.oneNote]
+  (h/clone-for
+     [note notes]
+     [:div.oneNote] (h/set-attr :oid (:_id note))
+     [:div.oneNote :a.title] (h/content (:title note))
+     [:div.oneNote :a.title]  (h/set-attr :href (str "/crud/" (:_id note) "/update"))
+     [:div.oneNote :.created] (h/content (str "created: " (:created note "(?)")))
+     [:div.oneNote :.modified] (h/content (str "modified: " (:modified note "(?)")))
+     [:div.oneNote :.contents] (h/content (:contents note "(none)"))
+     [:div.oneNote :a.delete] (h/content "X")
+     [:div.oneNote :a.delete] (h/set-attr :href (str "/crud/" (:_id note) "/delete"))))   
+
+(defn crud-list-page [request]
+  (let [authmap (auth-map request)
+        username (:username authmap)
+        user-id (:_id authmap)
+        notes (v/all-notes-for-user user-id)
+        total (count notes)
+        status (login-status request)
+        contents (crud-list-body username notes status)] 
+    (base-page {:title "Note List"
+                :content contents})))
+
 
 (h/defsnippet crud-update-body "public/html/crud-create.tpl.html" [:div#main]
   [username status note]

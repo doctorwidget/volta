@@ -1,7 +1,9 @@
 (ns volta.db
-  (:require [monger.core :as m]
+  (:require [clj-time.core :as t]
+            [monger.core :as m]
             [monger.db :as md]
             [monger.collection :as mc]
+            [monger.joda-time :as mjt]
             [monger.operators :refer :all]
             [monger.ring.session-store :refer [session-store]]
             [cemerick.friend.credentials :as creds])
@@ -13,7 +15,8 @@
 ; specify one particular database
 (def db (m/get-db conn "volta"))
 
-(def session-coll "web-sessions")
+; use underscores because Mongo doesn't like lisp-dashes
+(def session-coll "web_sessions")
 
 (defn oid
   "Generate one random ObjectId."
@@ -66,7 +69,7 @@
 ;; A real database of users, using MongoDB
 ;;-------------------------------------------
 
-(def user-coll "auth-users")
+(def user-coll "auth_users")
 
 (defn db-users
   "Take proposed username as a string and look for that username in the database.
@@ -75,15 +78,29 @@
   (if-let [user (mc/find-one-as-map db user-coll {:username targetname})]
     (assoc user :roles (map #(keyword "volta.db" %) (:roles user)))))
 
+(defn add-user!
+  "Add one user to the database. Input should be in the form of a map with
+  required :username and :password keys.
 
+  The :role key defaults to an empty set. 
 
-
+  The :hash key defaults to false; passwords are only hashed when it is true.
+  "
+  [{:keys [username password roles hash]
+      :or {:hash false :roles #{}}}]
+  (let [final-password (if hash
+                         (creds/hash-bcrypt password)
+                         password)] 
+    (mc/insert db user-coll {:_id (oid)
+                             :username username
+                             :password final-password
+                             :roles roles})))
 
 ;;-------------------------------------------
 ;; Note-Related Functions
 ;;-------------------------------------------
 
-(def note-coll "user-notes")
+(def note-coll "user_notes")
 
 (defn new-note!
   "Add a new note to the database"
@@ -91,7 +108,9 @@
   (mc/insert db note-coll {:_id (oid)
                            :title title
                            :contents contents
-                           :owner uuid}))
+                           :owner uuid
+                           :created (t/now)
+                           :modified (t/now)}))
 
 (defn all-notes-for-user
   "Get all of the notes associated with a single *user*, specified by the UUID
@@ -112,7 +131,7 @@
   [uuid title contents]
   (mc/update db note-coll
              {:_id uuid}
-             {$set {:title title :contents contents}}
+             {$set {:title title :contents contents :modified (t/now)}}
              {:multi false}))
 
 (defn delete-note!

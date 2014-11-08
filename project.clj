@@ -9,7 +9,9 @@
                  [com.novemberain/monger "2.0.0"]
                  [ring "1.3.1"]
                  [ring/ring-defaults "0.1.2"]
-                 [enlive "1.1.5"]]
+                 [enlive "1.1.5"]
+                 [clj-time "0.8.0"]
+                 [cheshire "5.3.1"]]
  
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-ring "0.8.11"]
