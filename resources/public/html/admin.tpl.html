@@ -1,26 +1,42 @@
 <div id="main">
    <h1>Admin</h1>
-   <div> 
+   <div class="introPanel"> 
      <p> 
-      Demonstrating a very basic admin interface, mainly for clearing old sessions
-      from the Mongo DB.
+      Demonstrating a very basic admin interface, for managing sessions and for
+      clearing users from the database. 
      </p>
      <p>
         Only <em>authenticated</em> users with the <code>::admin</code> key in 
         their authentication map are <em>authorized</em> to see this page.
      </p>
    </div>
-   <div>
-     <hr>
-     <div id="loginStatus">Placeholder for login status</div>
-     <div>
-       Show info about the overall MongoDB (database name, etcetera)
-     </div>
-     <div>  
-       Show list of all available collections and their document counts and total size in K.
-     </div>
-     <div> 
-       Single-button form to clear old sessions. 
-     </div> 
+
+   <div class="mongoPanel">
+
+     <div class="collectionPane">  
+       <div class="oneColl">
+            <p>
+              Collection <span class="collName">placeholder</span>
+            </p>
+            <p>
+              Documents:  <span class="collCount">-1</span>
+            </p>
+       </div>
+     </div> <!-- ./.collectionPane -->
+
+     <div class="cleanPane"> 
+       <p>Clean <em>all old sessions from the database with the button below.</p>
+       <form id="cleanForm" action="/admin/clean-sessions" method="POST">
+            <input type="submit" value="Clear Old Sessions">
+            <div id="csrf" />
+       </form> 
+     </div> <!-- ./.cleanPane -->
+
+   </div><!-- ./.mongoPanel -->
+
+    <hr>
+    <div class="loginStatus">
+      You are logged in as <span class="username">??</span>
    </div>
+
 </div>

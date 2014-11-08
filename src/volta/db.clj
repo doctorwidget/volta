@@ -50,7 +50,6 @@
   (mc/find-maps db session-coll {}))
 
 
-
 ;;---------------------------------
 ;; An in-memory "database"
 ;;---------------------------------
@@ -139,4 +138,22 @@
   the chances of accidentally deleting the whole collection. DOH!"
   [uuid]
   (mc/remove-by-id db note-coll uuid))
+
+
+;;------------------------------------
+;; Admin Screen Functions
+;;-------------------------------------
+
+(defn collection-summaries
+  "Get a vector of maps about each available collection in the database."
+  []
+  (mapv #(hash-map :name %  :count (mc/count db %)) (show-collections)))
+
+(defn purge-other-sessions
+  "Purges all session other than the current session"
+  [current-id]
+  (let [selector {:_id {$ne current-id}}]
+    (mc/remove db session-coll selector)))
+
+
 

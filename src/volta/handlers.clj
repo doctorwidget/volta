@@ -177,14 +177,6 @@
   (base-page {:title "Login"
               :content (login-body request)}))
 
-;;-------------------------
-;; Admin
-;;-------------------------
-(h/defsnippet admin-body "public/html/admin.tpl.html" [:div#main] [])
-
-(defn admin-page [request]
-  (base-page {:title "Admin Demo"
-              :content (admin-body)}))
 
 ;;--------------------------
 ;; User
@@ -346,4 +338,29 @@
        :body "You can only delete notes you own. We mean it!"})))
 
 
+;;-------------------------
+;; Admin
+;;-------------------------
+(h/defsnippet admin-body "public/html/admin.tpl.html"
+  [:div#main]
+  [colls username]
+  [:.username] (h/content username)
+  [:div#csrf] (h/html-content (af/anti-forgery-field))
+  [:.mongoPanel :.oneColl]
+  (h/clone-for [c colls]
+     [:.oneColl :.collName] (h/content (:name c))
+     [:.oneColl :.collCount] (h/content (str (:count c)))))
+
+(defn admin-page [request]
+  (let [colls (v/collection-summaries)
+        username (-> request auth-map :username)]
+    (base-page {:title "Admin Demo"
+                :content (admin-body colls username)
+                :extra-css ["css/volta_admin.css"]})))
+
+(defn clean-sessions!
+  "Clean out all sessions other than the current session."
+  [request]
+  (v/purge-other-sessions (-> request :session :_id))
+  (rr/redirect-after-post "/admin"))
 

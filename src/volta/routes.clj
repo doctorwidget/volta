@@ -28,6 +28,8 @@
        (friend/authenticated h/user-page))
   (GET "/admin" request
        (friend/authorize #{::vdb/admin} h/admin-page))
+  (POST "/admin/clean-sessions" request
+        (friend/authorize #{::vdb/admin} h/clean-sessions!))
   (GET "/crud" request
        (friend/authorize #{::vdb/user} h/crud-page)))
 
