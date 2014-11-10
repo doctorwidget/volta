@@ -112,6 +112,7 @@ Once that's ready, the actual process of creating a Heroku app is ridiculously
 simple. From a terminal window at the root directory of the project (i.e. the
 same tier as ``project.clj``), you simply call ``heroku create``:
 
+.. _`Heroku toolbelt`: https://toolbelt.heroku.com/
 
 .. code-block:: bash
 
@@ -139,12 +140,15 @@ set that up.
 Add The Database
 ====================
 
-You add resources (like a Mongo database) via the Heroku toolbelt. From a
-terminal window at the same tier as ``project.clj``, type the following:
+You add resources (like a Mongo database) via the Heroku toolbelt. We will use
+`Mongolab`_ for our MongoDB needs. From a terminal window at the same tier as
+``project.clj``, type the following:
+
+.. _`Mongolab`: https://devcenter.heroku.com/articles/mongolab
 
 .. code-block:: bash
 
-   $ heroku addons:add mongolab
+   $: heroku addons:add mongolab
    # Adding mongolab on peaceful-mountain-9656... done, v3 (free)
    # Welcome to MongoLab.  Your new subscription is being created and will be available shortly 
    # Please consult the MongoLab Add-on Admin UI to check on its progress.
@@ -156,12 +160,15 @@ other addons, also provides you with a web UI interface to your account, which
 you can track down as part of the app list in your account area. 
 
 In addition to adding the database, the Mongolab addon should have configured
-our ``MONGOLAB_URI``. Let's check::
+our ``MONGOLAB_URI``. Let's check:
 
 .. code-block:: bash
 
-   $ heroku config
-   # MONGOLAB_URI: mongodb://heroku_app... (REDACTED)
+    $: heroku config
+
+    # MONGOLAB_URI: mongodb://heroku_app... (REDACTED)
+
+
 
 Sure enough, there it is! We now have a Mongo database ready and waiting for us
 when we push our repository. Thanks to the work we did above, we don't need to
@@ -178,18 +185,62 @@ because we have a few views (including the root ``"/"`` route) that require no
 authentication whatsoever.
 
 
+The Procfile
+==============
+
+The single entry point for all Heroku apps is the ``Procfile``. This is a plain
+text file with no suffix which includes at least one Heroku ``process`` type
+that will start up and run the app. This is true regardless of what language you
+are working in; the only thing that varies is the content of that one-liner.
+Here is the complete contents of our new ``Procfile``.
+
+.. code-block:: bash
+
+   web: java $JVM_OPTS -cp target/{XXX}.jar clojure.main -m {{XXX}}.web
+
+The astute reader will immediately note that we do not have any file named
+XXX.jar inside our ``target/`` directory. Up until now, everything we've done
+has been oriented towards running via ``lein`` on a development machine. But to
+run on Heroku, we will need to deploy as a standard Java ``jar`` file. 
+
+This is a feature, not a bug. Running Clojure apps as ``jar`` files is yet
+another example of Clojure geting big returns from being hosted on the JVM. By
+piggybacking on Java, Clojure apps have access to the ubiquituous Java server
+runtime environment. That's why Clojure support was added to Heroku so early on;
+it's just a minor wrapping around basic Java support, and everyone offers that!
+
+In the next section, we will see how to give our project the ability to run as a
+``jar`` file. This won't involve *altering* any old code, which would suck.
+Instead, we will *add* a few lines of code to a few locations, and ``volta``
+will become able to run both from ``lein`` and also as a ``jar``, on demand. It
+will gain a new *option* for where and how it runs, without breaking any of our
+old examples. Sweet!
+
+
 Clojure Tweaks
 ==========================
 
-There are still a few details that we need to double-check before running a Clojure
-app on Heroku. None of them are complicated; most are simple one-line additions
-to our ``project.clj`` file. Let's go through them.
+The following changes details all of the changes that need to be made to get
+``volta`` ready to run as a standard ``jar`` file. As a bonus, these changes are
+not generally Heroku-specific; we would have to make similar changes to run on
+any cloud service (such `OpenShift`_, or any of the others). None of these are
+complicated; most are simple one-line additions to our ``project.clj`` file.
+Let's go through them one at a time. 
+
+.. _`OpenShift`: http://www.openshift.com
 
 
 :min-lein-version
 ------------------------
 
 by default you get Lein version 1.7, which is very old!
+
+
+system.properties
+---------------------------------
+
+by default you get OpenJDK 1.6, which you may or may not want
+you can configure a system.properties file
 
 
 uberjar :profile
@@ -203,30 +254,20 @@ makes it easy to add just such an uberjar file.
 a single main entry point
 -------------------------------
 
-The app needs a single class with a ``main`` method that will act as the single
-anointed entry point for the application on Heroku.
+Finally, the app needs a single class with a ``main`` method that will act as
+the single anointed entry point for the application on Heroku.
 
 
-system.properties
----------------------------------
+Summary
+-----------
 
-by default you get OpenJDK 1.6, which you may or may not want
-you can configure a system.properties file
+Once all of the above is complete, you can now fill in the arguments to the
+``Procfile`` up above, replacing those ``{XXX}``'s with our actual ``jar`` file
+name:
+
+TODO: show this
 
 
-
-The Procfile
-==============
-
-The single entry point for all Heroku apps is the ``Procfile``. This is a plain
-text file with no suffix which includes at least one Heroku ``process`` type
-that will start up and run the app. This is true regardless of what language you
-are working in; the only thing that varies is the content of that one-liner.
-Here is the complete contents of our new ``Procfile``.
-
-.. code-block:: bash
-
-   web: java $JVM_OPTS -cp target/{XXX}.jar clojure.main -m {{XXX}}.web
 
 
 
