@@ -7,6 +7,28 @@ Heroku
 Let's deploy this baby to Heroku. We haven't really proved a damn thing until
 anyone on earth can look at our running application. 
 
+Heroku has supported Clojure in the cloud for several years now. You can find
+detailed information about `Heroku Clojure support`_ here. They also provide 
+a `step-by-step guide`_ for deploying a Clojure app to Heroku, as well as an
+older and smaller database-driven `Clojure app tutorial`_ here. Finally, it's
+always useful to see someone else (not associated with Heroku at all) provide an
+example of a ready-for-Heroku setup, such as this one for the `Chestnut`_
+project.
+
+
+
+.. _`Heroku Clojure support`: https://devcenter.heroku.com/articles/clojure-support
+
+.. _`step-by-step guide`: https://devcenter.heroku.com/articles/getting-started-with-clojure#introduction
+
+.. _`Clojure app tutorial`: https://devcenter.heroku.com/articles/clojure-web-application 
+
+.. _`Chestnut`: https://github.com/plexus/chestnut
+
+All of those resources are very recent (mid-to-late 2014) as of the time of this
+writing. The take-home message is that Heroku takes Clojure support seriously,
+and you should use them!
+
 
 Mongo URI Connection
 =========================
@@ -147,11 +169,89 @@ write any new code to access this database: ``environ`` will automatically use
 this value rather than the one inside ``profiles.clj``. 
 
 The web UI would let us add a brand new user, *but* the web UI doesn't give us
-access to Bcrypt to properly hash passwords. That means we'll need to add our
-first admin user via a remote REPL session. And we can only do that *after* we
-push the repository and get the app running. Fortunately, the app will still be
-functional even before there are any users, because we have a few views
-(including the root ``"/"`` route) that require no authentication whatsoever.
+access to ``Bcrypt`` to properly hash passwords. That means there's no point in
+using their web UI to actually add a first user with ``::admin`` privileges.
+Instead, we'll need to add our first admin user via a remote REPL session. And
+we can only do that *after* we push the repository and get the app running.
+Fortunately, the app will still be functional even before there are any users,
+because we have a few views (including the root ``"/"`` route) that require no
+authentication whatsoever.
+
+
+Clojure Tweaks
+==========================
+
+There are still a few details that we need to double-check before running a Clojure
+app on Heroku. None of them are complicated; most are simple one-line additions
+to our ``project.clj`` file. Let's go through them.
+
+
+:min-lein-version
+------------------------
+
+by default you get Lein version 1.7, which is very old!
+
+
+uberjar :profile
+---------------------------------
+
+Java apps are deployed to Heroku in the form of an ``uberjar``, which is one
+gigantic zip file with some extra Java metadata. Fortunately, ``leiningen``
+makes it easy to add just such an uberjar file. 
+
+
+a single main entry point
+-------------------------------
+
+The app needs a single class with a ``main`` method that will act as the single
+anointed entry point for the application on Heroku.
+
+
+system.properties
+---------------------------------
+
+by default you get OpenJDK 1.6, which you may or may not want
+you can configure a system.properties file
+
+
+
+The Procfile
+==============
+
+The single entry point for all Heroku apps is the ``Procfile``. This is a plain
+text file with no suffix which includes at least one Heroku ``process`` type
+that will start up and run the app. This is true regardless of what language you
+are working in; the only thing that varies is the content of that one-liner.
+Here is the complete contents of our new ``Procfile``.
+
+.. code-block:: bash
+
+   web: java $JVM_OPTS -cp target/{XXX}.jar clojure.main -m {{XXX}}.web
+
+
+
+Push To Heroku
+============================
+
+Once you have all of those ducks in a row, you are finally ready to push to
+Heroku and see your app in action. 
+
+
+git push heroku master
+------------------------
+
+
+
+now after waiting, main page should be visible
+
+
+Add An Admin
+===============
+
+heroku run lein REPL
+
+add the user via our ``volta.db`` commands
+
 
 
 
