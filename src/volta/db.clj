@@ -6,14 +6,32 @@
             [monger.joda-time :as mjt]
             [monger.operators :refer :all]
             [monger.ring.session-store :refer [session-store]]
-            [cemerick.friend.credentials :as creds])
+            [cemerick.friend.credentials :as creds]
+            [volta.env :as venv])
   (:import org.bson.types.ObjectId))
 
-; create the connection
-(def conn (m/connect))
+
+;;--------------------------------------------
+;; Top level database functions
+
+;(def primary-db "volta")
+
+; create the connection directly
+;(def conn (m/connect))
 
 ; specify one particular database
-(def db (m/get-db conn "volta"))
+;(def db (m/get-db conn primary-db))
+
+
+; creating the connection via a URI yields a map
+(def uri-connection
+  (m/connect-via-uri (venv/volta-uri)))
+
+(def conn (:conn uri-connection))
+
+(def db (:db uri-connection))
+
+
 
 ; use underscores because Mongo doesn't like lisp-dashes
 (def session-coll "web_sessions")

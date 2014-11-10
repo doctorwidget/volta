@@ -12,3 +12,6 @@
 
 (defn get-blort []
   (env :demo-blort))
+
+(defn volta-uri []
+  (env :mongolab-uri))
