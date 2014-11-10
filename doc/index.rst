@@ -25,8 +25,11 @@ Contents:
    friend
    crud
    admin
+   environment
    heroku
    openid
+   clojurescript
+
 
 
 Indices and tables

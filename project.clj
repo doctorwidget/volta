@@ -11,20 +11,24 @@
                  [ring/ring-defaults "0.1.2"]
                  [enlive "1.1.5"]
                  [clj-time "0.8.0"]
-                 [cheshire "5.3.1"]]
+                 [cheshire "5.3.1"]
+                 [environ "1.0.0"]]
  
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-ring "0.8.11"]
+            [lein-environ "1.0.0"]
             [lein-sphinx "1.0.0"]]
  
   :main ^:skip-aot volta.core
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}}
+  :profiles {:uberjar {:aot :all}
+             :default [:base :system :user :provided :dev :dev*]
+             :dev {:env {:demo-foo "FOO from project.clj"
+                         :demo-bar "BAR from project.clj"}}}
 
   :ring {:handler volta.routes/main}
  
-  :sphinx {
-           :builder :html
+  :sphinx {:builder :html
            :source "doc"
            :output "doc/_build"
            :rebuild true
