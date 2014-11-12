@@ -131,7 +131,7 @@ Here is the complete contents of our new ``Procfile``.
 
 .. code-block:: bash
 
-   web: java $JVM_OPTS -cp target/volta.standalone.jar clojure.main -m volta.web
+   web: java $JVM_OPTS -cp target/uberjar/volta.standalone.jar clojure.main -m volta.web
 
 The astute reader will immediately note that we do not have any file named
 ``volta-standalone.jar`` inside our ``target/`` directory, nor any namespace
@@ -519,16 +519,24 @@ means we can take the ``lein uberjar`` command for a test run, woohoo!
    # Created {PROJECT}/target/uberjar/volta.standalone.jar   
 
 And now sure enough, there is a ``volta.standalone.jar`` inside the ``target/``
-directory. We can even try running it via a command which is (almost) the same
+directory. We can even try running it via a command which is exactly the same
 as the one in our ``Procfile``. 
 
 .. code-block:: bash
 
    $  java -cp target/uberjar/volta.standalone.jar clojure.main -m volta.web
 
-(Note that this is not the *exact* same path required in the ``Procfile``,
-because of the extra ``/uberjar/`` in the path. I can only assume that Heroku
-does something automagical about this... be alert for possible issues here!).
+Note that the official Heroku docs do *not* use this path; they use the shorter
+path ``target/xxx.standalone.jar`` rather than
+``target/uberjar/xxx.standalone.jar``. 
+
+However, the Heroku logs from the compilation process clearly show that
+``leiningen`` *does* put the compiled uberjar in a subdirectory, as we have
+done. And in fact, you must use this longer path for the application to
+successfully launch on Heroku. If you use the shorter path suggested in the
+online docs, the app will not launch, and your logs will show a somewhat-cryptic
+message about not being able to find the class ``clojure.main``, rather than
+telling you something more helpful like *dude, there is no jar there*. 
 
 Locally, the above command works just fine, giving us a server that is up and
 running *locally*, using the exact same jar-based AOT-compiled deployment
@@ -574,7 +582,7 @@ command line. This astonishing simplicity is what first made me a fan of heroku.
 And that's it. We now have our application up and running on Heroku. 
 
 
-Add An Admin
+Add Users
 ===============
 
 Of course the database is completely free of all users at the moment. We will
@@ -584,6 +592,71 @@ namespace. Yes, you can use a remote REPL *running on Heroku*  with access to
 all of your own namespaces... slick, no?
 
 
+.. code-block:: bash
+
+   $: heroku run lein repl
+
+   #... ridiculous amount of output elided
+
+The very time I started a remote REPL like this, there were so many things to
+download that the whole thing timed out without successfully launching a REPL at
+all! Fortunately, the second time retained the previous downloads in a cache
+somewhere, and I managed to get to a genuine REPL. So perhaps not so slick as it
+first appeared! :)
+
+.. code-block:: clojure
+   
+   (require '[volta.db :as v])
+   ;nil
+
+   ;... remember that the REPL has not yet initialized the database!
+
+   (v/init)
+   ;... elided
+
+   (v/show-collections)
+   ;#{"web_sessions" "auth_users" "system.indexes" "system.users"}
+
+   (v/add-user! {:username "root" :password "elided" :roles #{:admin} :hash true})
+   ;#<WriteResult...
+
+   (v/add-user! {:username "guest" :password "1234" :roles #{:user} :hash true})
+   ;#<WriteResult...
+
+And finally, remember to add a *unique* index to the users collection, so that
+no two users are allowed to have the same name.
+
+
+.. code-block:: clojure
+
+   (require '[monger.collection :as mc])
+   ;nil
+
+   (mc/ensure-index @v/db v/user-coll (array-map :username 1) {:unique true})
+   ;nil
+
+   (mc/indexes-on @v/db v/user-coll)
+   ;an array of two index objects; one for :_id and one for :username!
+
+   ; now confirm we can't add another account named "guest"
+
+   (v/add-user! {:username "guest" :password "5678" :roles #{:user} :hash true})
+   ;DuplicateKey... (rest of error output elided)
+
+And that's it! We now have our two baseline user accounts; one guest and one
+admin. Both of these exist on our *remote* database, and we can start logging
+into those accounts and adding notes and so on. 
+
+
+Summary
+=============
+
+It's certainly harder to deploy a Clojure app to Heroku than it is to deploy
+(say) a Django app. But in the end, it only comes down to a few extra lines of
+code, and some special use of ``(atom)`` for the database. And as a bonus, all
+of the modifications we made were not really *Heroku*-specific so much as they
+were *jar*-specific. Our app is now truly portable, which means it's actually a
+*better design* than it was before!
 
 
 
