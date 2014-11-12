@@ -28,76 +28,6 @@ writing. The take-home message is that Heroku takes Clojure support seriously,
 and you should use them!
 
 
-Mongo URI Connection
-=========================
-
-Before we can perform the actual migration, we need to alter the ``Monger``
-connection so that it works via a URI. On Heroku, the ``Mongolab`` plugin will
-automatically configure a URI connection string as an environmental variable for
-us. We want to use the *exact same pattern* locally, to minimize the chances
-of unwelcome surprises when we deploy. 
-
-Fortunately, thanks to our tutorial on :ref:`environment`, this is now trivial. 
-Let's start by adding a trivial function to our ``volta.env`` namespace:
-
-.. code-block:: clojure
-
-   ; add to bottom of ``volta.env``
-
-   (defn volta-uri [] (env :mongolab-uri))
-
-As we discussed earlier, it might be overkill to have a whole ``volta.env``
-namespace. But if we *do* ever need to add more complex conditional code related
-to the runtime environment, we will be much better off if 100% of that code is
-isolated to its own namespace. So better safe than sorry!
-
-Next, we add one new variable to the ``profiles.clj`` file:
-
-.. code-block:: clojure
-
-    {:dev* {:env {:mongolab-uri "mongodb://127.0.0.1/volta"
-                  :demo-bar "BAR from profiles.clj"
-                  :demo-zug "ZUG from profiles.clj"}}}   
-
-
-Note that we're using the keyword ``:mongolab-uri`` even for our local
-connection. When we move up to Heroku, there will be an environmental variable
-with this exact name, but it will contain the correct Heroku-side remote URI.
-This way we won't have to change a single thing in the code between our local
-and Heroku environments. 
-
-Finally, we alter ``volta.db`` to use this new system in liu of a direct
-connection:
-
-.. code-block:: clojure
-
-    ; new :require
-
-    (:require    ;... others elided
-              [volta.env :as venv[)
-
-
-    (def uri-connection
-        (m/connect-via-uri (venv/volta-uri)))
-
-    (def conn (:conn uri-connection))
-
-    (def db (:db uri-connection)
-
-As you can see, the ``monger.core/connect-via-uri`` function takes a string URI
-as its only argument. If usernames and passwords are required they will be a
-part of the string, but our local connection requires neither. The function
-returns a map with keys for ``:db``  and ``:conn``, which we map to the same
-symbols we were using before. 
-
-And that's it! You can now run your ``mongodb`` process, followed by ``lein ring
-server``, and you will see that our Ring server seamlessly connects to the Mongo
-database just like it did before. Now when we finally push to Heroku, we won't
-need to add even a single conditional check to our code: the ``environ`` library
-will handle sorting out the difference between ``profiles.clj`` and the
-available environmental variables for us. 
-
-
 Create The App
 =====================
 
@@ -157,6 +87,9 @@ interaction with Heroku will be via the ``heroku`` command. Mongolab, like many
 other addons, also provides you with a web UI interface to your account, which
 you can track down as part of the app list in your account area. 
 
+A New Environmental Variable
+--------------------------------------
+
 In addition to adding the database, the Mongolab addon should have configured
 our ``MONGOLAB_URI``. Let's check:
 
@@ -169,9 +102,13 @@ our ``MONGOLAB_URI``. Let's check:
 
 
 Sure enough, there it is! We now have a Mongo database ready and waiting for us
-when we push our repository. Thanks to the work we did above, we don't need to
-write any new code to access this database: ``environ`` will automatically use
-this value rather than the one inside ``profiles.clj``. 
+when we push our repository. Thanks to the work we did in the :ref:`environment`
+tutorial, we don't need to write any new code to access this database:
+``environ`` will automatically use this value rather than the one inside
+``profiles.clj``.
+
+A First User?
+-----------------
 
 The web UI would let us add a brand new user, *but* the web UI doesn't give us
 access to ``Bcrypt`` to properly hash passwords. That means there's no point in
@@ -209,15 +146,17 @@ runtime environment. That's why Clojure support was added to Heroku so early on;
 it's just a minor wrapping around basic Java support, and everyone offers that!
 
 In the next section, we will see how to give our project the ability to run as a
-``jar`` file. This won't involve *altering* any old code, which would suck.
-Instead, we will *add* a few lines of code to a few locations, creating the
-aforementioned ``volta.web`` namespace, and building the
-``volta-standalone.jar`` file.
+``jar`` file. We will try to keep the *altering* of old code to a minimum,
+because we'd like for any given tutorial in this set to be comprehensible even
+after we're done. Instead, we will *add* a few lines of code to a few locations,
+creating the aforementioned ``volta.web`` namespace, and building the
+``volta-standalone.jar`` file. But unfortunately, we will also have to make a
+few changes to the ``volta.db`` namespace.
 
-After we've done that, ``volta`` will b able to run either from ``lein`` at the
-command line, or as an ordinary Java ``jar``, on demand. It will gain a new
-*option* for where and how it runs, without breaking any of our old examples.
-Sweet!
+After we've finished these changes, ``volta`` will be able to run either from
+``lein`` at the command line, or as an ordinary Java ``jar``, on demand. It will
+gain a new *option* for where and how it runs, without breaking any of our old
+examples. Sweet!
 
 
 Ring In A Jar
@@ -283,7 +222,7 @@ system.properties
 By default, Heroku gives you Java 8, which you may or may not want. You can
 request a specific Java version by including a tiny little ``system.properties``
 file as part of your repository. This is a standard Java properties file (i.e.
-one ``x=y`` after another). 
+a sequence of ``x=y`` key-value strings). 
 
 We've done all of our development with Java 7, so let's explicitly tell Heroku
 to use that version for consistency. You can create your ``system.properties``
@@ -313,7 +252,7 @@ time. This is done by including ``:aot :all`` in the ``:uberjar`` profile.
 That's a profile like any of the other profiles we discussed in the earlier
 section. 
 
-Finally, we want to add one key to the production environment: a ``:production``
+We also want to add one key to the production environment: a ``:production``
 key. This will be checkable via ``environ`` just like any other environmental
 variable. It's fine for it to be ``nil`` everywhere but Heroku, which means we
 can just add it to an ``:env`` sub-dictionary to the ``:uberjar`` profile. 
@@ -383,11 +322,12 @@ flexibility.
 AOT and You
 ------------------
 
-The final tweak has to do with *ahead-of-time* compilation, which we asked for
-up above when we specified ``:aot :all``. This is necessary for performance
-reasons (it's already slow enough to spin up a Heroku dyno, let alone the whole
-application should have to be recompiled every time it wakes from sleep!), but
-it raises a tricky issue with the way we've defined our database connection. 
+The final changes all have to do with *ahead-of-time* compilation, which we
+asked for up above when we specified ``:aot :all``. This is necessary for
+performance reasons (it's already slow enough to spin up a Heroku dyno, let
+alone the whole application should have to be recompiled every time it wakes
+from sleep!), but it raises a tricky issue with the way we've defined our
+database connection.
 
 So far we've always created our database connection up at the top of the
 ``volta.db`` namespace, either via ``mongo.core/connect`` or
@@ -400,7 +340,7 @@ the AOT-friendly database
 
 So how do we ensure that the ``volta.db`` namespace can be compiled in advance,
 while still allowing us to freely run the *same* application either via ``lein``
-at the command line, or via ``java -jar`` up on Heroku? The answer is to
+at the command line, or via the ``Procfile`` up on Heroku? The answer is to
 redefine the ``volta.db`` connection using *atoms*. 
 
 .. code-block:: clojure
@@ -432,14 +372,14 @@ the AOT-friendly session store
 ..................................
 
 Next, we need to change the way the session store is handled. A Ring session
-store is not a function; it must be a *reified instance* that implements the
+store is a *reified instance* that implements the
 ``ring.middleware.session.store/SessionStore`` protocol. This turns out to
 create an issue with AOT compilation, because the session-store instance is
 compiled and instantiated before we know anything about the operating
 environment. If we don't know the operating environment, we can't supply the
 correct URI connection string, because the whole point is to pull that out at
 runtime via ``environ``. As a result, the default ``session-store`` provided by
-Monger just plain doesn't work in an AOT environment. 
+Monger just plain doesn't work in an AOT environment.
 
 However, that default Monger class is fine for all other purposes, so we will
 implement a simple two-step solution. First, we will define another atom holding
@@ -550,10 +490,10 @@ Frankly, even though we only made these changes because the AOT issue forced our
 hand, I think the are good one for the overall design. This seems like a tidier,
 better-organized approach than what we had previously, where the database
 connection and session store instantiation both happened behind the scenes, at
-an unknown time, as part of the compilation process. Before, all interactions
-with the database has a certain magical black box quality to them, but now they
-are quite explicit. I think we can all agree that *explicit is better than
-implicit*.
+an unknown time, as part of the compilation process. Before, the all-important
+initial connection to the database had a certain magical black box quality to
+it, but now it is perfectly explicit. I think we can all agree that *explicit is
+better than implicit*.
 
 
 Summary

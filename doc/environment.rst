@@ -230,8 +230,8 @@ exists. This is the last-place, highest-priority location, so it will always
 override any settings that were configured higher up in the chain.
 
 
-Putting It All Together
----------------------------
+A Silly Example
+=================================
 
 Let's end with an example that shows all of this in action. We will add a new
 namespace called ``volta.env``, and put in some helper functions there. As a
@@ -244,7 +244,7 @@ to set up your own working pieces from scratch.
 
 
 volta.env
-..................
+---------------------------------
 
 Create the ``volta.env`` namespace and put in the following helper functions:
 
@@ -269,7 +269,7 @@ That's the only code we will need. Everything else will be configured in one of
 the environments discussed above. 
 
 project.clj
-...............
+---------------------------------
 
 There's one small oversight in the otherwise-excellent ``environ`` library, as
 documented in `this issue`_. By default, ``leiningen`` automatically makes
@@ -312,6 +312,10 @@ The ``:default`` key defines how the default settings map will be built. By
 appending our new ``dev*`` map to it, we will get the desired *merge* behavior
 instead of *overwrite* behavior.
 
+
+profiles.clj
+---------------------------------
+
 And then in our brand-spanking new ``profiles.clj`` file:
 
 .. code-block:: clojure
@@ -352,6 +356,10 @@ pulled from ``profiles.clj``, overriding one of the ``project.clj`` values.
 Finally, we haven't set ``:demo-blort`` anywhere, but note that we get a nice clean
 ``nil`` back for it, rather than any kind of error.
 
+
+environmental variables
+---------------------------------
+
 Next, quit the REPL and add a value for ``DEMO_ZUG`` to the environment. This
 will be cleaned up by ``lein-environ`` to the more idiomaic ``:demo-zug`` inside
 Clojure. 
@@ -385,6 +393,112 @@ you want them for your own security needs, but always accessible the exact same
 way in your Clojure code. Beautiful!
 
 
+
+A Less-Silly Example
+=======================
+
+Next, let's show the use of ``environ`` to pull a database connection URI from
+the environment. When the project eventually runs on a cloud service such as
+Heroku, we won't be able to use the standard ``monger.core/connect`` method,
+which works best when both the MongoDB server and the web server are on the same
+machine. Instead, we will need to use the ``monger.core/connect-via-uri``
+method, which takes a URI as a string and creates a connection to a MongoDB
+instance running on any URL anywhere.
+
+So we have two *different* mechanisms for connecting to our databse, depending
+on which environment the server is running in *at the moment*. How to handle
+this? The obvious thing to do would be to run some boolean logic to determine
+whether or not the server is running locally, and then call ``connect`` for a
+local environment, or ``connect-via-uri`` when running on Heroku. However, this
+is an ugly solution, adding not just code complexity but also a new point where
+bugs could appear in one environment but not the other.
+
+It turns out that you can use ``connect-via-uri`` even for connecting from a
+local server to a local MongoDB instance. That gives us our better alternative:
+we can use ``connect-via-uri`` in *both* environments, and to use ``environ`` to
+pull out a *different* URI string for each operating environment. That way, the
+server runs the exact same code in both environments, and the only thing that
+changes is the actual string URI as determined by ``environ``. Now *that* is an
+elegant solution!
+
+
+volta.env
+----------------------------------
+
+Let's start by adding a trivial function to our ``volta.env`` namespace:
+
+.. code-block:: clojure
+
+   ; add to bottom of ``volta.env``
+
+   (defn volta-uri [] (env :mongolab-uri))
+
+As we discussed earlier, it is probably overkill to have a whole ``volta.env``
+namespace. But if we *do* ever need to add more complex conditional code related
+to the runtime environment, we will be much better off if 100% of that code is
+isolated to its own namespace. So better safe than sorry!
+
+
+profiles.clj
+---------------------
+
+Next, we add one new variable to the ``profiles.clj`` file:
+
+.. code-block:: clojure
+
+    {:dev* {:env {:mongolab-uri "mongodb://127.0.0.1/volta"
+                  :demo-bar "BAR from profiles.clj"
+                  :demo-zug "ZUG from profiles.clj"}}}   
+
+
+Note that we're using the keyword ``:mongolab-uri`` even for our local
+connection. When we move up to Heroku, there will be an environmental variable
+with this exact name, but it will contain the correct Heroku-side remote URI.
+This way we won't have to change a single thing in the code between our local
+and Heroku environments. 
+
+
+volta.db
+--------------
+
+Finally, we alter ``volta.db`` to use this new system in liu of a direct
+connection:
+
+.. code-block:: clojure
+
+    ; new :require
+
+    (:require    ;... others elided
+              [volta.env :as venv[)
+
+
+    (def uri-connection
+        (m/connect-via-uri (venv/volta-uri)))
+
+    (def conn (:conn uri-connection))
+
+    (def db (:db uri-connection)
+
+As you can see, the ``monger.core/connect-via-uri`` function takes a string URI
+as its only argument. If usernames and passwords are required they will be a
+part of the string, but our local connection requires neither. The function
+returns a map with keys for ``:db``  and ``:conn``, which we map to the same
+symbols we were using before. 
+
+
+conclusion
+----------------
+
+And that's it! You can now run your ``mongodb`` process, followed by ``lein ring
+server``, and you will see that our Ring server seamlessly connects to the Mongo
+database just like it did before. The fact that is uses a URI connection instead
+of a direct socket connection can be seen in MongoDB terminal output, but is
+otherwise an invisible implementation detail. 
+
+Now when we finally push to Heroku, we won't need to add even a single
+conditional check to our code: the ``environ`` library will handle sorting out
+the difference between ``profiles.clj`` and the available environmental
+variables for us.
 
 
 
