@@ -9,6 +9,7 @@
                  [com.novemberain/monger "2.0.0"]
                  [ring "1.3.1"]
                  [ring/ring-defaults "0.1.2"]
+                 [compojure "1.2.1"]
                  [enlive "1.1.5"]
                  [clj-time "0.8.0"]
                  [cheshire "5.3.1"]
@@ -18,15 +19,23 @@
             [lein-ring "0.8.11"]
             [lein-environ "1.0.0"]
             [lein-sphinx "1.0.0"]]
- 
-  :main ^:skip-aot volta.core
+
+  :min-lein-version "2.0.0"
+  
+  :main ^:skip-aot volta.core    ; target for 'lein run'
+
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}
+
+  :uberjar-name "volta.standalone.jar"
+  
+  :profiles {:uberjar {:aot :all
+                       :env {:production true}}
              :default [:base :system :user :provided :dev :dev*]
              :dev {:env {:demo-foo "FOO from project.clj"
                          :demo-bar "BAR from project.clj"}}}
 
-  :ring {:handler volta.routes/main}
+  :ring {:handler volta.routes/main
+         :init volta.db/init}
  
   :sphinx {:builder :html
            :source "doc"

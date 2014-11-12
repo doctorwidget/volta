@@ -55,12 +55,13 @@
   auth-routes
   (cj/context "/crud" []
               (friend/wrap-authorize crud-routes #{::vdb/user}))
+  (GET "/home" request h/volta-home)
   (ANY "/" request h/volta-home)
   (route/resources "/")
   (route/not-found "Not Found. WTF dude."))
 
 (def volta-defaults
-  (assoc-in d/site-defaults [:session :store] vdb/monger-store))
+  (assoc-in d/site-defaults [:session :store] (vdb/->VoltaSessionStore)))
 
 (def wrapped-routes
   (-> all-routes

@@ -1,0 +1,1 @@
+web: java $JVM_OPTS -cp target/volta.standalone.jar clojure.main -m volta.web
