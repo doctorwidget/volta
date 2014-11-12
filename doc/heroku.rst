@@ -579,21 +579,23 @@ means we can take the ``lein uberjar`` command for a test run, woohoo!
    # Created {PROJECT}/target/uberjar/volta.standalone.jar   
 
 And now sure enough, there is a ``volta.standalone.jar`` inside the ``target/``
-directory. We can even try running it via the exact same command found inside
-the ``Procfile``. 
+directory. We can even try running it via a command which is (almost) the same
+as the one in our ``Procfile``. 
 
 .. code-block:: bash
 
    $  java -cp target/uberjar/volta.standalone.jar clojure.main -m volta.web
 
-(Note that this is not the exact same path required by the ``Procfile``... be
-alert for possible issues with this).
+(Note that this is not the *exact* same path required in the ``Procfile``,
+because of the extra ``/uberjar/`` in the path. I can only assume that Heroku
+does something automagical about this... be alert for possible issues here!).
 
-That command works fine now, and it gives us a server is up and running
-*locally*, using the exact same container strategy that will be used on Heroku.
-*Ta daaaa!*.
-
-
+Locally, the above command works just fine, giving us a server that is up and
+running *locally*, using the exact same jar-based AOT-compiled deployment
+strategy that will be used on Heroku. *Ta daaaa!*. You can point a browser at
+``localhost:5000`` (remember that port 5000 is our chosen default for the
+``jar`` main method) and see the same home page that we get when we run via
+``lein ring server``.
 
 
 
