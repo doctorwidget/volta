@@ -549,17 +549,41 @@ Heroku and see your app in action.
 git push heroku master
 ------------------------
 
+Pushing to Heroku is as simple as running ``git push heroku master`` from the
+command line. This astonishing simplicity is what first made me a fan of heroku.
 
+.. code-block:: bash
 
-now after waiting, main page should be visible
+   $: git push heroku master
+
+   # ... extensive output elided
+
+   # ... massive (once-only) download of jar files
+
+   # ... compilation of all our own custom namespaces
+
+   # ... jar file created
+
+   # -----> Discovering process types
+   #        Procfile declares types -> web
+
+   #-----> Compressing... done, 88.1MB
+   #-----> Launching... done, v4
+   #       https://peaceful-mountain-9656.herokuapp.com/ deployed to Heroku
+
+And that's it. We now have our application up and running on Heroku. 
 
 
 Add An Admin
 ===============
 
-heroku run lein REPL
+Of course the database is completely free of all users at the moment. We will
+add a couple of them next, just so we can inspect all of the routes. We will do
+this from a ``REPL`` with the help of helper functions in our ``volta.db``
+namespace. Yes, you can use a remote REPL *running on Heroku*  with access to
+all of your own namespaces... slick, no?
 
-add the user via our ``volta.db`` commands
+
 
 
 

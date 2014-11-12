@@ -28,11 +28,11 @@
 
   :uberjar-name "volta.standalone.jar"
   
-  :profiles {:uberjar {:aot :all
-                       :env {:production true}}
+  :profiles {:uberjar {:aot :all}
              :default [:base :system :user :provided :dev :dev*]
              :dev {:env {:demo-foo "FOO from project.clj"
-                         :demo-bar "BAR from project.clj"}}}
+                         :demo-bar "BAR from project.clj"}}
+             :production {:env {:production true}}}
 
   :ring {:handler volta.routes/main
          :init volta.db/init}
