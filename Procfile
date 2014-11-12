@@ -1,1 +1,1 @@
-web: java $JVM_OPTS -cp target/volta.standalone.jar clojure.main -m volta.web
+web: java $JVM_OPTS -cp target/uberjar/volta.standalone.jar clojure.main -m volta.web

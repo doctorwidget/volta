@@ -252,10 +252,10 @@ time. This is done by including ``:aot :all`` in the ``:uberjar`` profile.
 That's a profile like any of the other profiles we discussed in the earlier
 section. 
 
-We also want to add one key to the production environment: a ``:production``
-key. This will be checkable via ``environ`` just like any other environmental
-variable. It's fine for it to be ``nil`` everywhere but Heroku, which means we
-can just add it to an ``:env`` sub-dictionary to the ``:uberjar`` profile. 
+We also want to add a ``:profile`` named ``:production``, as recommended by
+Heroku. This will be checkable via ``environ`` just like any other environmental
+variable. It's fine for it to be ``nil`` everywhere but Heroku, since we haven't
+written any code that checks for this value. 
 
 It's much easier to make those changes than it is to type out descriptions of
 them. Here is how the modified portions of ``project.clj`` should look:
@@ -267,8 +267,8 @@ them. Here is how the modified portions of ``project.clj`` should look:
     :uberjar-name "volta.standalone.jar"
 
     :profiles { ;... other profiles elided
-                :uberjar {:aot :all
-                          :env {:production true}}}
+                :uberjar {:aot :all}
+                :production {:env {:production true}}}
 
                    
 
