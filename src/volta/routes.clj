@@ -76,6 +76,7 @@
            :workflows [(workflows/interactive-form)]
           })
       (d/wrap-defaults volta-defaults)
+      (vm/wrap-home)
       (vm/wrap-spy "Outer spy" [#"\.js" #"\.css" #"\favicon.ico"])))
 
 (def main #'wrapped-routes)

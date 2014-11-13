@@ -52,3 +52,20 @@
                                             (.endsWith uri "/"))
                                      (subs uri 0 (dec (count uri)))
                                      uri))))))
+
+(defn wrap-home
+  "Workaround for the (very odd) tendency of the ring.defaults middleware to
+  bounce all requests for the root '/' URI back as a zero-byte octet stream.
+  Even more strangely, this behavior is only evident when we use AOT compilation
+  and run from a jar. The problem does *not* occur when running via leiningen.
+  Note that this is not a complete solution; it depends on there also being a
+  Compojure route mapped to the '/home' URI. If you try to do a simple redirect
+  at the routing level, the ring middleware bounces the response before the
+  redirect is ever triggered. Hence this middleware, which should come before
+  the ring defaults middleware. "
+  [handler]
+  (fn [request]
+     (let [uri (:uri request)
+           fixed-uri (if (= "/" uri) "/home" uri)]
+       (handler (assoc request :uri fixed-uri)))))
+
