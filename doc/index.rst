@@ -27,8 +27,9 @@ Contents:
    admin
    environment
    heroku
-   openid
    clojurescript
+   openid
+  
 
 
 

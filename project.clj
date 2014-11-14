@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2268"]
+                 [org.clojure/clojurescript "0.0-2371"]
                  [com.cemerick/friend "0.2.1"]
                  [com.novemberain/monger "2.0.0"]
                  [ring "1.3.1"]
@@ -20,6 +20,9 @@
             [lein-environ "1.0.0"]
             [lein-sphinx "1.0.0"]]
 
+  :source-paths ["src" "src/clj" "src/cljs"]
+  :test-paths ["test" "test/clj" "test/cljs"]
+  
   :min-lein-version "2.0.0"
   
   :main ^:skip-aot volta.core    ; target for 'lein run'

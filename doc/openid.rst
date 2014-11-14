@@ -14,4 +14,23 @@ clearly the wave of the future.
 
 
 
+Conclusion
+=================
+
+Once this feature is complete, I think we will really have the minimum set of
+batteries up and running. Obviously you can always add more, but this current
+set of batteries does (I think) represent a true minimal level of real
+functionality. We have the all-important persistent database level, real
+sessions stored in our real database, real users authenticated with real
+passwords also stored in our real database, and working demonstrations of basic
+CRUD operations with varying availability depending on the authorization level
+of the user. All of it running on Heroku where anyone can see it in action, and
+even showing how to do basic integration of ClojureScript into the dev
+environment. That's *far* more than any single tutorial that I have found ever
+covers. Usually they go through Ring, Compojure and Hiccup, and maybe Enlive if
+you're lucky. 
+
+Time to declare victory and move on!
+
+
 

@@ -5,32 +5,50 @@ ClojureScript
 *********************
 
 The final thing we will do is show how to integrate ClojureScript into a
-project. Thanks to ``leiningen``, this is very easy to do. The most difficult
-thing will be to refactor the main ``src`` directory to have separate
-sub-directories for ``clj`` and ``cljs``. 
-
-Once that's done, a somewhat ambitious (but *very* useful!) example would be to
-redo the ``notes`` example from before as a single-page ClojureScript/AJAX
-application.
+project. Thanks to ``leiningen``, this is very easy to do. 
 
 
-Conclusion
-=================
+Dependencies & Plugins
+============================
 
-Once this feature is complete, I think we will really have the minimum set of
-batteries up and running. Obviously you can always add more, but this current
-set of batteries does (I think) represent a true minimal level of real
-functionality. We have the all-important persistent database level, real
-sessions stored in our real database, real users authenticated with real
-passwords also stored in our real database, and working demonstrations of basic
-CRUD operations with varying availability depending on the authorization level
-of the user. All of it running on Heroku where anyone can see it in action, and
-even showing how to do basic integration of ClojureScript into the dev
-environment. That's *far* more than any single tutorial that I have found ever
-covers. Usually they go through Ring, Compojure and Hiccup, and maybe Enlive if
-you're lucky. 
+As always, we start by changing ``project.clj``, adding both a new
+``:dependency`` and a new ``:plugin``.
 
-Time to declare victory and move on!
+.. code-block:: clojure
+
+   :dependencies [  ;... elided
+                    [org.clojure/clojurescript "0.0-2371"]]
+
+   :plugins [ ;... elided
+              [lein-cljbuild "1.0.3"]]
+
+This should be seeming like common sense by now. 
+
+
+Subdirectories
+====================
+
+By far the biggest change we need to make to integrate ClojureScript is to
+divide up our ``src`` and ``test`` directories so that they have separate
+subdirectories for ``clj`` versus ``cljs`` files. So (for example), any path
+that we have until now described as ``src/volta/db.clj`` will become
+``src/clj/volta/db.clj``.
+
+.. code-block:: bash
+
+    $: mkdir src/clj
+    $: mkdir src/cljs
+    $: mkdir test/clj
+    $: mkdir test/cljs
+
+    # then use the git `mv` command:
+
+    $: git mv src/volta src/clj
+    $: git mv test/volta test/clj
+
+    $: git status
+    # lots of changes to commit...
+
 
 
 
