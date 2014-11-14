@@ -19,6 +19,15 @@
   [src]
   (first (h/html [:script {:src src :type "text/javascript"}])))
 
+(defn js-call
+  "Render a script block that performs one function call to a JavaScript
+   namespace. Intended to kick off a page 'main()' method, but can be
+   used to run any kind of initialization function. The argument to the
+   function should be a two-item vector containing the namespace and the
+   desired function to be called."
+  [[namespace fun]]
+  (first (h/html [:script (format "%s.%s()" namespace fun)])))
+
 (defn simple-response
   "The ring.util.response helper leaves off the content-type, and some
    browsers force a file download instead of a page view for that. So
@@ -98,11 +107,12 @@
 ;; template that outputs a complete response
 (h/deftemplate base-page
   "public/html/base.html"
-  [{:keys [extra-css extra-js title] :as context}]
+  [{:keys [extra-css extra-js js-calls title] :as context}]
   [:title] (h/content title)
   [:head] (h/append (map stylesheet extra-css))
   [:#contents] (h/content (:content context))
-  [:body] (h/append (map script extra-js)))
+  [:body] (h/append (map script extra-js))
+  [:body] (h/append (map js-call js-calls)))
 
 
 ;;---------------------------------------
@@ -364,3 +374,17 @@
   (v/purge-other-sessions (-> request :session :_id))
   (rr/redirect-after-post "/admin"))
 
+
+;;---------------------------
+;; ClojureScript Demo
+;;---------------------------
+(h/defsnippet cljs-demo-body "public/html/cljs-demo.tpl.html"
+  [:div#main]
+  [request]) ; note: no transformations!
+
+
+(defn cljs-demo-page [request]
+  (base-page {:title "ClojureScript Demo"
+              :content (cljs-demo-body request)
+              :extra-js ["/js/volta.js"]
+              :js-calls [["volta.cljs_demo" "init"]]}))

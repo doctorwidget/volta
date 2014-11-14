@@ -45,7 +45,11 @@
        (h/crud-delete-page request id))
   (POST "/:id/delete" [id :as request]
         (h/crud-delete! request id)))
- 
+
+(defroutes cljs-routes
+  (cj/context "/cljs" []
+              (GET "/demo" [] h/cljs-demo-page)))
+
 (defroutes all-routes
   (cj/context "/greek" [] greek-routes)
   (cj/context "/colors" []
@@ -55,6 +59,7 @@
   auth-routes
   (cj/context "/crud" []
               (friend/wrap-authorize crud-routes #{::vdb/user}))
+  cljs-routes
   (GET "/home" request h/volta-home)
   (ANY "/" request h/volta-home)
   (route/resources "/")

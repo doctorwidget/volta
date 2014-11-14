@@ -45,6 +45,21 @@
            :output "doc/_build"
            :rebuild true
            :nitpicky true
-           :setting-values {:html_theme "agogo"}})
-           ; consider other themes: haiku, traditional, scrolls, nature, pyramid
+           :setting-values {:html_theme "agogo"}}
+           ; standard themes:  haiku, traditional, scrolls, nature, pyramid
+
+    :cljsbuild {:builds 
+                [{:id "dev"
+                  :source-paths ["src/cljs"]
+                  :compiler {:pretty-print true
+                             :output-to "resources/public/js/volta.js"
+                             :source-map "resources/public/js/volta.js.map"
+                             :output-dir "resources/public/js/out-dev"
+                             :optimizations :whitespace}}
+                 {:id "prod"
+                  :source-paths ["src/cljs"]
+                  :compiler {:output-to "resources/public/js/volta.min.js"
+                             :source-map "resources/public/js/volta.min.js.map"
+                             :output-dir "resources/public/js/out"
+                             :optimizations :advanced}}]})           
 
