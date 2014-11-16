@@ -28598,7 +28598,7 @@ goog.require("goog.dom");
 goog.require("goog.dom");
 volta.cljs_demo.$output = goog.dom.getElement("cljsOutput");
 volta.cljs_demo.timed_string = function timed_string() {
-  return "This greeting dynamically created on " + cljs.core.str.cljs$core$IFn$_invoke$arity$1(new Date);
+  return "ClojureScript up and running as of " + cljs.core.str.cljs$core$IFn$_invoke$arity$1(new Date);
 };
 volta.cljs_demo.init = function init() {
   console.log("initializing cljs-demo page...");

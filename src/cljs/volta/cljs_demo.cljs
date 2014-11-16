@@ -6,7 +6,7 @@
 (defn timed-string
   "A timestamped greeting"
   []
-  (str "This greeting dynamically created on " (js/Date.)))
+  (str "ClojureScript up and running as of " (js/Date.)))
 
 (defn ^:export init
   "Initialize the main cljs-demo page"

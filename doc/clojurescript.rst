@@ -331,21 +331,34 @@ all of the scaffolding to get your ClojureScript files compiled and placed onto
 host pages. The rest is up to you. 
 
 
-Further Changes
-==================
+Modify Slug Size
+=================
 
-A few other things we might think about implementing. Some of these are easier
-to quickly demonstrate than others, and none of them are as foundational as what
-we've shown above. But still, they would be nice to include as part of
-``Volta``. 
+#. Show how to separate ClojureScript and ``lein-cljsbuild`` out of the main
+   profile and into a ``:dev`` profile so we can shave tens of megabytes off of
+   the Heroku distribution slug size.
+
+
+Om
+============
 
 #. Show use of Om
 #. Show how to use ``react.js`` from a ``/lib`` directory.
 #. Show how to use ``:preamble`` to just inline that baby on in there.
 #. Show how to use externs files.
-#. Show how to separate ClojureScript and ``lein-cljsbuild`` out of the main
-   profile and into a ``:dev`` profile so we can shave tens of megabytes off of
-   the Heroku distribution slug size.
+
+
+Further Changes
+==================
+
+Use the ``:production`` var (which is ``true`` on Heroku) to refine the behavior
+in production versus in local development:
+
+#. run minified ClojureScript ``volta.min.js`` on heroku, while still 
+   running ``volta.js`` on local. 
+#. only use our wrap-spy middleware in the local environment, not on Heroku!
+
+
 
 
 
