@@ -386,5 +386,6 @@
 (defn cljs-demo-page [request]
   (base-page {:title "ClojureScript Demo"
               :content (cljs-demo-body request)
-              :extra-js ["/js/volta.js"]
+              :extra-js ["/js/react.min.js"
+                         "/js/volta.js"]
               :js-calls [["volta.cljs_demo" "init"]]}))

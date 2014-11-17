@@ -33,7 +33,8 @@
              :default [:base :system :user :provided :dev :dev*]
              :dev {:env {:demo-foo "FOO from project.clj"
                          :demo-bar "BAR from project.clj"}
-                   :dependencies [[org.clojure/clojurescript "0.0-2371"]]
+                   :dependencies [[org.clojure/clojurescript "0.0-2371"]
+                                  [om "0.7.3"]]
                    :plugins [[lein-cljsbuild "1.0.3"]]}
              :production {:env {:production true}}}
 
@@ -48,18 +49,22 @@
            :setting-values {:html_theme "agogo"}}
            ; standard themes:  haiku, traditional, scrolls, nature, pyramid
 
- :cljsbuild {:builds 
+  :cljsbuild {:builds 
                 [{:id "dev"
                   :source-paths ["src/cljs"]
                   :compiler {:pretty-print true
                              :output-to "resources/public/js/volta.js"
                              :source-map "resources/public/js/volta.js.map"
                              :output-dir "resources/public/js/out-dev"
+                             ;:preamble ["lib/react.js"]
+                             :externs ["lib/react-externs.js"]
                              :optimizations :whitespace}}
                  {:id "prod"
                   :source-paths ["src/cljs"]
                   :compiler {:output-to "resources/public/js/volta.min.js"
                              :source-map "resources/public/js/volta.min.js.map"
                              :output-dir "resources/public/js/out"
+                             ;:preamble ["lib/react.min.js"]
+                             :externs ["lib/react-externs.js"]
                              :optimizations :advanced}}]})           
 
